@@ -1,0 +1,7 @@
+# RVV-VLA Lab — project authorship notice
+
+Gustave Leblanc (MA-Gustave) — independent RVV-VLA Lab experimental development, research orchestration, testing and documentation, **only insofar as supported by actual authorship and provenance**.
+
+This record does not assign authorship of inherited or third-party material to the Lab maintainer. The historical authors and contributors of the embedded simdjson engine remain credited, **where applicable to the inherited material**, in `engine/AUTHORS`, `engine/CONTRIBUTORS`, source copyright notices and the preserved legal licence texts.
+
+For boundaries on **new, separately identified** original contributions, see `LICENSE-SCOPE.md`, `LICENSE-ORIGINAL-ADDITIONS.md`, and `PROVENANCE-ADDITIONS.md`.

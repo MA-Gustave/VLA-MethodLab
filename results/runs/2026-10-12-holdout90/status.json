@@ -1,0 +1,40 @@
+{
+  "abandoned_points": {},
+  "budget_seconds": 7200,
+  "core": 0,
+  "current_candidate": "A2_quick_dispatch",
+  "deadline_utc": "2026-10-12T19:22:37.622601+00:00",
+  "disk_free_gib": 3.767,
+  "disk_free_mib": 3940.8,
+  "disk_last_15m_check_utc": "2026-10-12T19:08:06+00:00",
+  "disk_monitor_interval_seconds": 900,
+  "disk_safety_floor_mib": 200,
+  "experiment_phase": "confirm_secondary",
+  "fixed_round_completed": 5,
+  "jobs": 2,
+  "last_measurement_order": [
+    "A1_size_gate",
+    "sparse8_escape8_reference",
+    "A2_quick_dispatch",
+    "A0_E14_original",
+    "upstream_vls256"
+  ],
+  "last_update": "2026-10-12T19:22:55+00:00",
+  "observations": 8402,
+  "orchestration_cpu": 1,
+  "point_catalog": [
+    "upstream_vls256",
+    "A0_E14_original",
+    "A1_size_gate",
+    "A2_quick_dispatch",
+    "sparse8_escape8_reference"
+  ],
+  "primary_cases_planned": 88,
+  "primary_round": 3,
+  "schema": 2,
+  "source": "/home/users/gleblanc/rvvlab-v5/sources/20261012T172155Z-82aff0",
+  "started_utc": "2026-10-12T17:22:37+00:00",
+  "state": "stopped",
+  "stop_reason": "2-hour budget reached",
+  "vlen_bits": 256
+}

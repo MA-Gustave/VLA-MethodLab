@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "composition-explorer-92-8h",
+  "title": "Test 92 — Adaptive 8h: staged screening + Stage 1 diagnostics",
+  "description": "242 compositions, 48-point balanced refinement, matched experimental-overhead controls, Stage 1 diagnostic, fresh-seed holdout. Native RVV validation required.",
+  "script": "92_staged_explorer.py",
+  "enabled": true,
+  "params": {
+    "hours": 8.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "612a6f7453da0e13501158d11c4865fe6035987a3324086acd5f9c4ee0a9bc1e"
+  },
+  "manual_only": true
+}

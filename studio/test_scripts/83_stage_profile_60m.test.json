@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "profile-v5-stages-60m",
+  "title": "RVV-VLA Stage 1 / Stage 2 + DOM — 60-minute targeted profile",
+  "description": "Four fixed modes (E14, E01, sparse8, official); GCC -O3 direct build, strict JSON validity, raw UTF-8, paired and order-rotated separate Stage1, Stage2 and DOM measurements; max 60 min, manual.",
+  "script": "83_stage_profile_60m.py",
+  "enabled": true,
+  "params": {
+    "hours": 1,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "987bc0928368d9d3fd68b2a5e1f2fb9987cb06ceaaa2679075ef17f0328becec"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-prequal-exploratory-60m",
+  "title": "Adaptive Prequalification — 60-minute exploratory sweep (A0/A1/A2)",
+  "description": "Native RVV, 174 diverse deterministic JSON scenarios, 128B–4MiB, edge thresholds, skewed front/mid/back workloads; DOM plus true Stage 1/2. Exploratory trends only; includes GCC builds.",
+  "script": "87_prequal_exploration_60m.py",
+  "enabled": true,
+  "params": {
+    "hours": 1.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "9ee2de0ea9f1f7dfbeb9504769d8c47e3eb3341234f88a0570a0cf9ad64caf19"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-prequal-exploratory-8h",
+  "title": "Adaptive Prequalification — 8-hour combinatorial discovery (A0/A1/A2 + 6 RVV alternatives + upstream)",
+  "description": "Native GCC, 767 deterministic multi-shape JSON scenarios, 128 B to 4 MiB, pair/triple mixes, misplaced signals, size gates and stress; DOM + real Stage 1/2; hypothesis discovery only.",
+  "script": "88_prequal_exploration_8h.py",
+  "enabled": true,
+  "params": {
+    "hours": 8.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "12d46c77f25f2869db26efc4d1bef22a19a20df6ba406a36d0327064daa86b99"
+  }
+}

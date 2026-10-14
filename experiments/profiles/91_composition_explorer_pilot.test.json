@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "composition-explorer-91-pilot",
+  "title": "Test 91 — Pilot 1h: compositions + regional dispatch",
+  "description": "Experimental native exploration; three builds, differential correctness gates, paired A2/official controls, family-guided combinations, fresh-seed holdout. Partial coverage is expected.",
+  "script": "91_composition_explorer.py",
+  "enabled": true,
+  "params": {
+    "hours": 1.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "84534e5c39ff58201c799e43663bf56b8806fca4b30462df78f4b3ebdae52ccc"
+  },
+  "manual_only": true
+}

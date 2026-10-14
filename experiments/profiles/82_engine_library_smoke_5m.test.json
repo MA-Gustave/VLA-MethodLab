@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "smoke-v5-engines-5m",
+  "title": "RVV-VLA Engine Library — 5-minute GCC smoke (manual)",
+  "description": "Five-minute native RVV-VLA mechanical validation: direct GCC compile, no CMake/network/dependency downloads; parse runtime probe and SHA256-synced diagnostics.",
+  "script": "82_engine_library_smoke_5m.py",
+  "enabled": true,
+  "params": {
+    "seconds": 300,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "b55eb37a7c0379b84d0ce40e43ef9607bb3c63b279b1786c3f8a9540cc2bb74f"
+  }
+}

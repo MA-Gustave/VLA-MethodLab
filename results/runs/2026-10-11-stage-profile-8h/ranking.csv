@@ -1,0 +1,13 @@
+variant,metric,paired_n,median_ratio,geomean_ratio,mad_ratio
+E14_packed_disabled,dom_all,1722,1.376455,1.501837,0.297526
+E01_adaptive,dom_all,1721,1.37497,1.442987,0.241883
+sparse8_escape8_reference,dom_all,1722,1.37395,1.442125,0.335791
+upstream_vls256,dom_all,1722,1.0,1.0,0.0
+E14_packed_disabled,stage1,1722,1.946598,1.60084,0.642835
+E01_adaptive,stage1,1721,1.686154,1.498418,0.525287
+sparse8_escape8_reference,stage1,1722,1.896474,1.485622,0.919662
+upstream_vls256,stage1,1722,1.0,1.0,0.0
+sparse8_escape8_reference,stage2,1722,1.280174,1.305739,0.13913
+E14_packed_disabled,stage2,1722,1.264429,1.297753,0.161586
+E01_adaptive,stage2,1721,1.25442,1.293676,0.163198
+upstream_vls256,stage2,1722,1.0,1.0,0.0

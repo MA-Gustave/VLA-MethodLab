@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "explore-v5-engines-3h",
+  "title": "RVV-VLA Engine Library — 3-hour fixed-grid DOM exploration (direct GCC)",
+  "description": "17 precommitted configurations (15 specialized plus sparse8 and official VLS256); direct GCC -O3 build, JSON correctness gate, paired DOM-only throughput, 3h cap, no CMake or automatic hypothesis generation.",
+  "script": "81_engine_library_3h.py",
+  "enabled": true,
+  "params": {
+    "hours": 3,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "b467d29c8632af8114700de4e42a6965d770b51bbe0d18eba87e780b2880ebff"
+  }
+}

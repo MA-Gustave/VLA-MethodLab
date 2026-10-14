@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "stage1-overhead-93-3h",
+  "title": "Test 93 \u2014 Stage1/overhead isolation (3h max)",
+  "description": "Four matched native builds (A2, official, packed without exploration, research compositions); 9 fixed policies, Stage1 diagnosis, fresh-seed holdout.",
+  "script": "93_stage1_overhead.py",
+  "enabled": true,
+  "params": {
+    "hours": 3.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "3b39d5b08cb04106f37e57c899bff1e409575a0c8c30e3f6b03d4256510e6386"
+  },
+  "manual_only": true
+}

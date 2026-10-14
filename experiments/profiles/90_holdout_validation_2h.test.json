@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-holdout-validation-2h",
+  "title": "Adaptive Validation 90 — 2h holdout: 512B/4KiB gates and sparse8 adversarial",
+  "description": "2h native paired holdout validation with new JSON, five fixed plans, 3 repeated primary subprocess trials, direct DOM/Stage1/Stage2, 200MiB safety.",
+  "script": "90_holdout_validation_2h.py",
+  "enabled": true,
+  "params": {
+    "hours": 2.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "4670dd0142981199efb8a98ba76c581f0722559a9b2153b734fc2efa76ee1d93"
+  }
+}

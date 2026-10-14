@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-dispatch-v2-30m",
+  "title": "Adaptive Dispatch v2 — 30-minute A0/A1/A2 Stage1/Stage2/DOM A/B",
+  "description": "Fixed A0/A1/A2 vs official VLS256, 30-minute native paired DOM/Stage1/Stage2. Includes small JSON.",
+  "script": "86_adaptive_dispatch_30m.py",
+  "enabled": true,
+  "params": {
+    "hours": 0.5,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "a1b1506f9804b3dbb11e07625186ab285f04e67fb604cf169045cb0c11af0e18"
+  }
+}

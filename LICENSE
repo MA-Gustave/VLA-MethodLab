@@ -1,0 +1,10 @@
+# VLA MethodLab — licensing and scope notice
+
+**No single new software licence applies to this entire repository.**
+
+1. Third-party and upstream portions remain under their original licences. The Apache-2.0 and MIT licence texts bundled in the historical source snapshot are preserved at `licenses/historical-simdjson/`. Other file-specific notices remain effective.
+2. Code and documentation *previously* distributed under a licence such as Apache-2.0 or MIT remain usable under the applicable permissions already granted. This notice does not revoke them.
+3. Genuinely new, separable, independently copyrightable additions MAY be subject to `LICENSE-ORIGINAL-ADDITIONS.md` **only** if precisely registered in `PROVENANCE-ADDITIONS.md` and not covered by an earlier grant. No current file is assumed newly restricted merely because it is present here.
+4. Facts, methods, ideas, benchmark values and independent implementations are not made exclusive simply by this notice.
+
+See `LICENSE-SCOPE.md`, `AUTHORS`, and `CONTRIBUTING.md`. Legal review is advisable before relying on restrictions for mixed-origin code.

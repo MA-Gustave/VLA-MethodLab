@@ -1,0 +1,16 @@
+# Private credentials, caches and local benchmark results
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*.log
+*.bak
+*.tmp
+results/
+.DS_Store

@@ -1,0 +1,12 @@
+FIX: PowerShell 5.1 strips nested quotes inside Python -c arguments.
+Replace the launcher scripts at the root of your existing RVV-VLA Lab tree.
+This patch does not change C++, studies, results, workers, GUI Python code or SSH configuration.
+
+Windows PowerShell:
+$root = 'C:\mycode\Simdjson\RVV-VLA Lab'
+$zip = "$env:USERPROFILE\Downloads\RVV-VLA-Lab_Launcher_Paramiko_Fix_v3.zip"
+Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+& (Join-Path $root 'LAUNCH_RVV_VLA_LAB.bat')
+
+When asked about installing Paramiko, answer Y if you want SSH functionality.
+The dependency is installed only into the project's local .venv.

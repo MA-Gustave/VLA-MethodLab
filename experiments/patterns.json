@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "name": "RVV-VLA v5.0.3 composable engine-library exploration",
+  "policy": "Historical E00-E14 fixed catalogue. Test91 composition search: compositions91.json and engine/scripts/rvv/explore91/design.py.",
+  "build_notes": "Use flags as EXTRA_CXXFLAGS for both simdjson library and benchmark; never reuse a build directory after flags change. Native correctness is a gate for meaningful throughput.",
+  "points": [
+    {
+      "id": "E00_historical",
+      "flags": [
+        "-DSIMDJSON_RVV_ENGINE_LIBRARY=0"
+      ],
+      "hypothesis": "Full v5 RVV-VLA historical baseline"
+    },
+    {
+      "id": "E01_adaptive",
+      "flags": [
+        "-DSIMDJSON_RVV_ENGINE_LIBRARY=1",
+        "-DSIMDJSON_RVV_FORCE_PLAN=0"
+      ],
+      "hypothesis": "Bounded document classifier + engine composition"
+    },
+    {
+      "id": "E02_dense",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=2"
+      ],
+      "hypothesis": "Favor compressed vectors earlier on dense documents"
+    },
+    {
+      "id": "E03_numeric",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=3"
+      ],
+      "hypothesis": "Sparse writer 8 and low-escape path on numeric inputs"
+    },
+    {
+      "id": "E04_text",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=4"
+      ],
+      "hypothesis": "Fast-path whole interior-string blocks"
+    },
+    {
+      "id": "E05_escaped",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=5"
+      ],
+      "hypothesis": "Sparse escape threshold 8 and no packed quote/shift"
+    },
+    {
+      "id": "E06_unicode_escape",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=6"
+      ],
+      "hypothesis": "ASCII Unicode-escape strings need sparse backslash handling"
+    },
+    {
+      "id": "E07_utf8",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=7"
+      ],
+      "hypothesis": "Literal UTF-8 differs from escaped Unicode corpus"
+    },
+    {
+      "id": "E08_balanced",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=8"
+      ],
+      "hypothesis": "Compare common plan without classifier overhead"
+    },
+    {
+      "id": "E09_mask_writer",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=9"
+      ],
+      "hypothesis": "Word-mask writer for medium-density blocks"
+    },
+    {
+      "id": "E10_packed_escape",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=10"
+      ],
+      "hypothesis": "Check cost of packed escape on escaped strings"
+    },
+    {
+      "id": "E11_packed_quote_shift",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=11"
+      ],
+      "hypothesis": "Retest combined packed quote/shift as negative control"
+    },
+    {
+      "id": "E12_string_fastpath_only",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=12"
+      ],
+      "hypothesis": "Isolate new fast path without other policy changes"
+    },
+    {
+      "id": "E13_stage2_prefetch",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=0",
+        "-DSIMDJSON_RVV_STAGE2_PREFETCH=1"
+      ],
+      "hypothesis": "Hint Stage2 before generic tape-builder parse; experimental"
+    },
+    {
+      "id": "E14_packed_disabled",
+      "flags": [
+        "-DSIMDJSON_RVV_FORCE_PLAN=0",
+        "-DSIMDJSON_RVV_ENABLE_PACKED_CONTROL=0",
+        "-DSIMDJSON_RVV_ENABLE_PACKED_INDEX_WRITER=0"
+      ],
+      "hypothesis": "Confirm packed-control penalty in newly composed paths"
+    }
+  ]
+}

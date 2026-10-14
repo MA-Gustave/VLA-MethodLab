@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "machine-compare-94-1h",
+  "title": "Test 94 — Optimised A2 / LTO / packed (1 hour · selected machine)",
+  "description": "One click from Studio. Cloud-V runs native; EPCC compiles on login and submits a job to your selected RISC-V node via Slurm. SHA256-verified results returned to Studio.",
+  "script": "94_machine_1h.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "seconds": 3600
+  }
+}

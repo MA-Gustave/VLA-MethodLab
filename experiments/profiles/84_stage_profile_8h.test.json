@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "profile-v5-stages-8h",
+  "title": "RVV-VLA Stage 1 / Stage 2 + DOM — 8-hour targeted profile",
+  "description": "Eight-hour fixed-four-plan GCC -O3 stage profile; real Stage1/Stage2/DOM, UTF-8 and correctness gates, rotated paired comparisons, disk safety and graceful stop; manual start only.",
+  "script": "84_stage_profile_8h.py",
+  "enabled": true,
+  "params": {
+    "hours": 8,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "a9a39894ad4dc74a31afe0358d40800be3f3f3e259dc380dfac3f16ff2bfe2b5"
+  }
+}

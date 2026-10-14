@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-dispatch-v2-smoke",
+  "title": "Adaptive Dispatch v2 — 5-minute native GCC smoke (A2)",
+  "description": "Manually approved RVV A2 compilation and correctness. No ranking.",
+  "script": "85_adaptive_dispatch_smoke_5m.py",
+  "enabled": true,
+  "params": {
+    "seconds": 300,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "c23d8f1797535d3383b90da536cab7126df049100a7f50b92448a45c54dc80a2"
+  }
+}

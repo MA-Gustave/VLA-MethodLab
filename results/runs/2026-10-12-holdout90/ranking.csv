@@ -1,0 +1,16 @@
+variant,metric,paired_n,median_ratio,geomean_ratio,mad_ratio
+A2_quick_dispatch,dom_all,1680,1.30524,1.281468,0.291825
+sparse8_escape8_reference,dom_all,1680,0.944744,1.095614,0.187186
+upstream_vls256,dom_all,1680,1.0,1.0,0.0
+A1_size_gate,dom_all,1680,1.15189,0.936909,0.412523
+A0_E14_original,dom_all,1680,0.693862,0.685774,0.357479
+A2_quick_dispatch,stage1,1680,1.049306,1.295265,0.278534
+sparse8_escape8_reference,stage1,1680,0.796412,1.043786,0.176102
+upstream_vls256,stage1,1680,1.0,1.0,0.0
+A1_size_gate,stage1,1680,1.043841,0.864834,0.695793
+A0_E14_original,stage1,1680,0.520146,0.575827,0.288687
+A0_E14_original,stage2,1680,1.373636,1.350284,0.09515
+A1_size_gate,stage2,1680,1.372119,1.34973,0.100464
+A2_quick_dispatch,stage2,1680,1.373349,1.349497,0.099159
+sparse8_escape8_reference,stage2,1680,1.363559,1.338658,0.107687
+upstream_vls256,stage2,1680,1.0,1.0,0.0

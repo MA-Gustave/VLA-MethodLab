@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "adaptive-prequal-corrected-60m",
+  "title": "Adaptive Prequalification 89 — corrected 1-hour pilot (A0/A1/A2 + E01/sparse8 + VLS256)",
+  "description": "Native GCC 60-minute pilot, fixed 1..1000 benchmark iterations, mandatory native split smoke, 767 validated scenarios with six-design priority wave; Stage1/Stage2 + DOM; exploratory only.",
+  "script": "89_prequal_corrected_60m.py",
+  "enabled": true,
+  "params": {
+    "hours": 1.0,
+    "jobs": 2,
+    "core": 0,
+    "worker_sha256": "512cd17c4872ef47caf4dbe8a9f9c5c3c4e6b7cb22122e79a9666e9695cc6944"
+  }
+}

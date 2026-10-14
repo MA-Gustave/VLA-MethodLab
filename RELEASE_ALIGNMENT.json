@@ -1,0 +1,151 @@
+{
+  "attribution": "Thanks to Cloud-V for free access to the historical RISC-V server.",
+  "canonical_repository": "https://github.com/MA-Gustave/VLA-MethodLab",
+  "disk_safety": {
+    "applies_to_profiles": "81–93",
+    "enforcement": "before steps and during native commands",
+    "free_floor_mib": 200,
+    "modifies_remote_runs_already_launched": false,
+    "safety_stop_terminal": true,
+    "scheduled_audit_interval_seconds": 900,
+    "unknown_remote_disk": "warn and defer to worker"
+  },
+  "engine_patterns_sha256": "6bc10154f75ff30f86816906e74b36469d40b18313034d0afec721ab9bc55db6",
+  "engine_plan_sha256": "7ebd7d2f4606c9ed9db77bcced50371e669698e5278f1afc4e5369fc5b4e7f4e",
+  "external_env": "searches for existing external .env using v6 bridge",
+  "launchers": "v5 CMD-safe BAT with v4 dependency checks, GUI and PowerShell launchers integrated",
+  "manual_campaigns": 14,
+  "previous_evidence": {
+    "2026-10-10-engine-library-3h": 2469,
+    "2026-10-11-stage-profile-8h": 6887,
+    "2026-10-12-holdout90": 8402
+  },
+  "profiles": "81–93",
+  "project": "RVV-VLA-Lab",
+  "release": "RVV-VLA-Lab-v6.2-Test93-stage1-overhead-diagnostic",
+  "schema": "rvvlab.unified.v6",
+  "security": "No .env, SSH identities, private keys, .git histories or local runtime results in the archive.",
+  "source_baseline": "modified simdjson v5.0.3 RVV-VLA engine",
+  "studio": "integrated under studio/; old separate RVV-VLA-Studio repository obsolete",
+  "test_87": {
+    "budget_seconds": 3600,
+    "id": "adaptive-prequal-exploratory-60m",
+    "method": "No automatic winner. A0/A1/A2 vs official VLS256; Stage 1/Stage 2/DOM independent timed calls.",
+    "native_riscv_completed": false,
+    "planned_corpus_cases": 174,
+    "validation": "174 input shapes JSON-parse validated locally; 21 exact boundaries; 7 GUI/CLI hashes aligned"
+  },
+  "test_88": {
+    "budget_seconds": 28800,
+    "compiled_variants_planned": 10,
+    "design_breakdown": {
+      "exact": 51,
+      "heavy": 20,
+      "pair": 352,
+      "single": 128,
+      "skew": 72,
+      "triple": 144
+    },
+    "id": "adaptive-prequal-exploratory-8h",
+    "planned_synthetic_json": 767,
+    "result_policy": "exploratory hypotheses only, no automatic winner",
+    "status": "FAILED on native RISC-V, 0 observations; initial split calls requested 2048/1024 iterations although C++ limit was 1000; external diagnostics held privately."
+  },
+  "test_89": {
+    "budget_seconds": 3600,
+    "compiled_variants_planned": 6,
+    "id": "adaptive-prequal-corrected-60m",
+    "max_benchmark_iterations": 1000,
+    "native_riscv_completed": false,
+    "native_smoke_each_variant": "256B at 1000 iters, plus 4095/4096/4097B",
+    "planned_synthetic_json": 767,
+    "priority_wave_cases": 81,
+    "result_policy": "exploratory hypotheses only"
+  },
+  "validation_scope": "Portable generation, policy C++, scheduler and synchronization simulation, fallback harness. New RVV path not compiled or executed here.",
+  "worker_sha256": {
+    "81_engine_library_3h_worker.py": "b467d29c8632af8114700de4e42a6965d770b51bbe0d18eba87e780b2880ebff",
+    "82_engine_library_smoke_5m_worker.py": "b55eb37a7c0379b84d0ce40e43ef9607bb3c63b279b1786c3f8a9540cc2bb74f",
+    "83_stage_profile_60m_worker.py": "987bc0928368d9d3fd68b2a5e1f2fb9987cb06ceaaa2679075ef17f0328becec",
+    "84_stage_profile_8h_worker.py": "a9a39894ad4dc74a31afe0358d40800be3f3f3e259dc380dfac3f16ff2bfe2b5",
+    "85_adaptive_dispatch_smoke_5m_worker.py": "c23d8f1797535d3383b90da536cab7126df049100a7f50b92448a45c54dc80a2",
+    "86_adaptive_dispatch_30m_worker.py": "a1b1506f9804b3dbb11e07625186ab285f04e67fb604cf169045cb0c11af0e18",
+    "87_prequal_exploration_60m_worker.py": "9ee2de0ea9f1f7dfbeb9504769d8c47e3eb3341234f88a0570a0cf9ad64caf19",
+    "88_prequal_exploration_8h_worker.py": "12d46c77f25f2869db26efc4d1bef22a19a20df6ba406a36d0327064daa86b99",
+    "89_prequal_corrected_60m_worker.py": "512cd17c4872ef47caf4dbe8a9f9c5c3c4e6b7cb22122e79a9666e9695cc6944",
+    "90_holdout_validation_2h_worker.py": "4670dd0142981199efb8a98ba76c581f0722559a9b2153b734fc2efa76ee1d93",
+    "91_composition_explorer_worker.py": "84534e5c39ff58201c799e43663bf56b8806fca4b30462df78f4b3ebdae52ccc",
+    "92_staged_explorer_worker.py": "612a6f7453da0e13501158d11c4865fe6035987a3324086acd5f9c4ee0a9bc1e",
+    "93_stage1_overhead_worker.py": "3b39d5b08cb04106f37e57c899bff1e409575a0c8c30e3f6b03d4256510e6386"
+  },
+  "test_91": {
+    "status": "experimental_native_validation_pending",
+    "initial_compositions": 242,
+    "designs": 2304,
+    "max_mib": 64,
+    "builds": 3,
+    "budgets_hours": [
+      1,
+      8
+    ],
+    "automatic_production_promotion": false
+  },
+  "exploration91_header_sha256": "e363c05379e9fe2bf22fc8e026415ef88e43f915245573a7a7b07715872def89",
+  "test_92": {
+    "status": "native_riscv_completed_budget_stop_17591_observations_no_failed_candidates",
+    "budget_hours": 8,
+    "original_compositions": 242,
+    "screening": "one matched anchor per composition; time-limited",
+    "refinement_limit": 48,
+    "holdout_fraction_post_build": 0.15,
+    "max_finalists": 6,
+    "comparisons": "A2, official VLS256 and experimental same corpus; fresh holdout",
+    "stage1_diagnostic_weight": 0.15,
+    "native_parser_changes": false,
+    "native_riscv_results": {
+      "observations": 17591,
+      "complete_triplets": 5863,
+      "json_materialized": 1808,
+      "validated": 242,
+      "rejected": 0,
+      "holdout_best": "P2345c07522b1",
+      "holdout_dom_vs_a2": 0.7622816563462572,
+      "holdout_dom_vs_official": 1.2021937297485643
+    }
+  },
+  "test_93": {
+    "status": "portable_tests_passed_native_riscv_pending",
+    "hours_max": 3,
+    "native_builds": 4,
+    "compositions": 9,
+    "max_json_mib": 8,
+    "training_fraction_post_build": 0.8,
+    "holdout_fraction_post_build": 0.2,
+    "compares": [
+      "A2",
+      "official_VLS256",
+      "packed_plain_non_exploratory",
+      "composition_runtime_experimental"
+    ],
+    "results": "EXPLORATION_93.md; map.csv; controls93.csv; diagnostics.csv",
+    "native_parser_changes": false,
+    "manual_only": true
+  },
+  "studio_ui_update": {
+    "source_snapshot": "znapshot_RVV-VLA-Lab_10131514.zip",
+    "integration": "Cloud-V and EPCC dual machine + Test94 + compact campaign dashboard",
+    "newest_test": 94,
+    "studio_test_manifests": 15,
+    "test94_remote_run_confirmed": false,
+    "changes": [
+      "campaign start/elapsed/phase/details",
+      "obsolete SHA UI removed, verification retained",
+      "EPCC-only Slurm controls",
+      "WinError 10054 transient read-only refresh warning"
+    ],
+    "build_policy": "No engine or Test91-94 worker source modified"
+  },
+  "engine_repository": "https://github.com/MA-Gustave/VectorPath-RVV",
+  "engine_checkout_path": "engine/",
+  "repository_layout_note": "Standalone distribution contains engine; GitHub checkout should use a recursive submodule after repositories are populated."
+}

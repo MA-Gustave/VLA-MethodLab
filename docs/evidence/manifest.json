@@ -1,0 +1,64 @@
+{
+  "schema": "rvv-vla.run.v1",
+  "run_id": "night-20261010T220545Z-5e4191",
+  "kind": "engine-library-3h",
+  "status": "stopped",
+  "stop_reason": "3-hour budget reached",
+  "date_utc": "2026-10-10",
+  "source_archive_sha256": "f9ec08ba9ac8ccee7d9dda9ff69dc32889d47820dfe015ef7c0bfa512b34a6e2",
+  "deployed_source_snapshot_sha256": "997df4f149ad5e880195378302ac3b2555700e3b6c8b02234f527d68e1bdea8c",
+  "source_snapshot_file_count": 828,
+  "source_note": "Snapshot was a dirty working tree; upstream reference commit is not a unique reconstruction of custom C++ source.",
+  "reference_upstream_commit": "bf89ddd00ef5fcb6a7f20611ea8853d258b67249",
+  "source_expected_branch": "feature/rvv-vla-v5",
+  "worker_sha256": "8d756814985b67acf70cdae5910773aea110f643f2f19cf9c1a3368bf462ca66",
+  "cpu": "BPI-F3; RISC-V RVV; VLEN=256; CPU affinity 0; performance governor",
+  "compiler": "GCC 14.2.0; direct g++ -O3; -march=rv64gcv -mabi=lp64d",
+  "metric": "DOM throughput, decimal GB/s (1e9 bytes/s), 3-repeat median",
+  "stage1_and_stage2_measured": false,
+  "configuration_count": 17,
+  "build_passed": 17,
+  "smoke_passed": 17,
+  "correctness_smoke": "6 valid + 3 invalid JSON per binary (not full conformance)",
+  "measurements": 2469,
+  "phase_counts": {
+    "quick_screen": 85,
+    "explore_fixed": 2384
+  },
+  "pairing_keys": [
+    "phase",
+    "corpus_id",
+    "parse_iterations",
+    "trial"
+  ],
+  "control": "upstream_vls256",
+  "constraints": [
+    "Synthetic corpus: 7 families; two size labels; CITM and Twitter small/large are duplicated content",
+    "Fixed execution order may affect results",
+    "No Stage1 or Stage2 timing",
+    "Raw multibyte UTF-8 not established in 3h corpus",
+    "Compiler artifacts and full dirty-tree source snapshot are not included"
+  ],
+  "files": {
+    "observations.csv": {
+      "sha256": "c62cd9dc29d80d185e92afe908f8e61a173d670f14eb1e8dfa023f34c9401585",
+      "bytes": 565564
+    },
+    "events.jsonl": {
+      "sha256": "3a75db2ecd979d2f3ac9fb6db0794fcf89130a144e117c287944bb9ad6b539d9",
+      "bytes": 813647
+    },
+    "ranking.csv": {
+      "sha256": "7a3eb821d21247e1b31b6bb85da471075e1eee850d004c38b03cf31dbc82dd3a",
+      "bytes": 1517
+    },
+    "by-family.csv": {
+      "sha256": "48d141eb2c6b2ef47a9475260bbbf4f56c44bcc5b1b98e08bc3502337e18d4ed",
+      "bytes": 1440
+    },
+    "failures.csv": {
+      "sha256": "8aa3c7a910f1b2932fbc4eed6a96f5acf9bd4c9c88e53bdbb91354711be07b96",
+      "bytes": 56
+    }
+  }
+}

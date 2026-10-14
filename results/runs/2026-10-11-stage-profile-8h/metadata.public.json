@@ -1,0 +1,256 @@
+{
+  "benchmark_harness_sha256": "541d59539a745f642f574f028fd93a00156a0b227b6d7792b9f75aabdbc909be",
+  "build_coverage": {
+    "attempted": 4,
+    "passed": [
+      "E01_adaptive",
+      "E14_packed_disabled",
+      "sparse8_escape8_reference",
+      "upstream_vls256"
+    ],
+    "planned": 4
+  },
+  "builds": [
+    {
+      "result": "PASS",
+      "seconds": 150.73,
+      "tag": "E14_packed_disabled"
+    },
+    {
+      "result": "PASS",
+      "seconds": 152.98,
+      "tag": "upstream_vls256"
+    },
+    {
+      "result": "PASS",
+      "seconds": 154.18,
+      "tag": "E01_adaptive"
+    },
+    {
+      "result": "PASS",
+      "seconds": 150.87,
+      "tag": "sparse8_escape8_reference"
+    }
+  ],
+  "compiler_diagnostics": [],
+  "compiler_flags": {
+    "VLA": [
+      "-march=rv64gcv",
+      "-DSIMDJSON_IMPLEMENTATION_RVV=1",
+      "-DSIMDJSON_IMPLEMENTATION_RVV_VLS=0"
+    ],
+    "VLS": [
+      "-march=rv64gcv_zvl256b",
+      "-mrvv-vector-bits=zvl",
+      "-DSIMDJSON_IMPLEMENTATION_RVV_VLS=1"
+    ],
+    "common": [
+      "-O3",
+      "-DNDEBUG",
+      "-g0",
+      "-pthread",
+      "-std=c++17",
+      "-mabi=lp64d"
+    ]
+  },
+  "corpus_files": [
+    {
+      "bytes": 4194098,
+      "id": "large_corpus/ascii_strings.json"
+    },
+    {
+      "bytes": 1727204,
+      "id": "large_corpus/citm_catalog.json"
+    },
+    {
+      "bytes": 4194302,
+      "id": "large_corpus/dense_structurals.json"
+    },
+    {
+      "bytes": 4194227,
+      "id": "large_corpus/escapes.json"
+    },
+    {
+      "bytes": 4194290,
+      "id": "large_corpus/numbers.json"
+    },
+    {
+      "bytes": 631515,
+      "id": "large_corpus/twitter.json"
+    },
+    {
+      "bytes": 4194218,
+      "id": "large_corpus/unicode_strings.json"
+    },
+    {
+      "bytes": 1048526,
+      "id": "small_corpus/ascii_strings.json"
+    },
+    {
+      "bytes": 1727204,
+      "id": "small_corpus/citm_catalog.json"
+    },
+    {
+      "bytes": 1048566,
+      "id": "small_corpus/dense_structurals.json"
+    },
+    {
+      "bytes": 1048322,
+      "id": "small_corpus/escapes.json"
+    },
+    {
+      "bytes": 1048574,
+      "id": "small_corpus/numbers.json"
+    },
+    {
+      "bytes": 631515,
+      "id": "small_corpus/twitter.json"
+    },
+    {
+      "bytes": 1048556,
+      "id": "small_corpus/unicode_strings.json"
+    },
+    {
+      "bytes": 1030949,
+      "id": "small_corpus/real_utf8_strings.json"
+    },
+    {
+      "bytes": 4184437,
+      "id": "large_corpus/real_utf8_strings.json"
+    }
+  ],
+  "corpus_generator": "Existing bench_native.generate_corpus (fixed 4MiB + 1MiB diverse families)",
+  "credits": {
+    "server": "Cloud-V generously made a RISC-V test server available free of charge for the original measurements."
+  },
+  "date_utc": "2026-10-11",
+  "evidence_provenance": {
+    "remote_snapshot_not_supplied_for_independent_rehash": true,
+    "remote_snapshot_sha256_recorded_by_sync": "c1da38e6aa93b00ab83bae8f8b7fbf29acfc1ee783422c6d09d14081ce6f2d1b"
+  },
+  "experiment": "engine_library_8h_split_stage_direct_gcc",
+  "measurement_method": "Direct g++ -O3: independent DOM parse() timing + direct stage1()/stage2() timing; 3-repetition medians; 1e9 bytes/s",
+  "metric_limits": "Internal parser stage1 and stage2 measured explicitly (warm preallocated parser); stage durations do not necessarily add to DOM public API timing; CPU wall time, no cycles",
+  "ordering": "Fixed per-trial forward/reverse rotation of 4 variants; each corpus has paired same-trial reference",
+  "points": [
+    [
+      "upstream_vls256",
+      {},
+      "rvv_vls",
+      "vls"
+    ],
+    [
+      "E14_packed_disabled",
+      {
+        "SIMDJSON_RVV_ENABLE_PACKED_CONTROL": "0",
+        "SIMDJSON_RVV_ENABLE_PACKED_INDEX_WRITER": "0",
+        "SIMDJSON_RVV_ENGINE_LIBRARY": "1",
+        "SIMDJSON_RVV_FORCE_PLAN": "0"
+      },
+      "rvv",
+      "vla"
+    ],
+    [
+      "E01_adaptive",
+      {
+        "SIMDJSON_RVV_ENGINE_LIBRARY": "1",
+        "SIMDJSON_RVV_FORCE_PLAN": "0"
+      },
+      "rvv",
+      "vla"
+    ],
+    [
+      "sparse8_escape8_reference",
+      {
+        "SIMDJSON_RVV_ENABLE_PACKED_ESCAPE": "0",
+        "SIMDJSON_RVV_ENABLE_PACKED_INDEX_WRITER": "0",
+        "SIMDJSON_RVV_ENABLE_PACKED_QUOTE": "0",
+        "SIMDJSON_RVV_ENABLE_PACKED_SHIFT": "0",
+        "SIMDJSON_RVV_ENGINE_LIBRARY": "0",
+        "SIMDJSON_RVV_SPARSE_ESCAPE_THRESHOLD": "8",
+        "SIMDJSON_RVV_SPARSE_INDEX_THRESHOLD": "8"
+      },
+      "rvv",
+      "vla"
+    ]
+  ],
+  "raw_utf8_corpus": "Real UTF-8 multibyte input added separately from escaped Unicode corpus",
+  "reference": {
+    "commit": "bf89ddd00ef5fcb6a7f20611ea8853d258b67249",
+    "name": "upstream_vls256",
+    "release": "v5.0.3",
+    "repository": "simdjson/simdjson"
+  },
+  "schema": "rvvlab.public-evidence.v1",
+  "source_commit_base": "bf89ddd00ef5fcb6a7f20611ea8853d258b67249",
+  "source_note": "Local source snapshot was dirty; a base commit alone is NOT an exact reproduction of the VLA build.",
+  "source_snapshot_file_count": 828,
+  "source_worktree_dirty": true,
+  "status": {
+    "budget_seconds": 28800,
+    "completed_fixed_rounds": 107,
+    "disk_free_gib_at_end": 4.245,
+    "ended_utc": "2026-10-11T10:29:51+00:00",
+    "observations": 6887,
+    "started_utc": "2026-10-11T02:29:50+00:00",
+    "state": "stopped",
+    "stop_reason": "8-hour budget reached"
+  },
+  "target": {
+    "CPU_core": 0,
+    "VLEN_bits": 256,
+    "architecture": "riscv64",
+    "compiler": "g++ (Bianbu 14.2.0-19ubuntu2bb3) 14.2.0",
+    "governor": "performance",
+    "virtualization": "none"
+  },
+  "validation": {
+    "cases": {
+      "invalid": 24,
+      "method": "seeded Python json.dumps reference plus 24 deliberately malformed JSON documents",
+      "valid": 169
+    },
+    "runtime_probes": [
+      {
+        "backend": "rvv",
+        "result": "PASS",
+        "selftest": {
+          "invalid": 24,
+          "method": "seeded Python json.dumps reference plus 24 deliberately malformed JSON documents",
+          "valid": 169
+        },
+        "tag": "E14_packed_disabled"
+      },
+      {
+        "backend": "rvv_vls",
+        "result": "PASS",
+        "selftest": {
+          "invalid": 24,
+          "method": "seeded Python json.dumps reference plus 24 deliberately malformed JSON documents",
+          "valid": 169
+        },
+        "tag": "upstream_vls256"
+      },
+      {
+        "backend": "rvv",
+        "result": "PASS",
+        "selftest": {
+          "invalid": 24,
+          "method": "seeded Python json.dumps reference plus 24 deliberately malformed JSON documents",
+          "valid": 169
+        },
+        "tag": "E01_adaptive"
+      },
+      {
+        "backend": "rvv",
+        "result": "PASS",
+        "selftest": {
+          "invalid": 24,
+          "method": "seeded Python json.dumps reference plus 24 deliberately malformed JSON documents",
+          "valid": 169
+        },
+        "tag": "sparse8_escape8_reference"
+      }
+    ]
+  }
+}

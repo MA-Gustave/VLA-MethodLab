@@ -1,0 +1,6 @@
+{
+  "worker": "example_probe.py",
+  "args": [],
+  "max_minutes": 5,
+  "description": "Custom plugin example: native server metadata, standardized SHA256 evidence"
+}
