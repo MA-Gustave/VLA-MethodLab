@@ -7,8 +7,9 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import messagebox,ttk
-from rvvlab_test_center import (TEST94_KEY,check_remote_night,inspect_remote_94,
+from rvvlab_test_center import (TEST94_KEY,TEST96_KEY,TEST97_KEY,check_remote_night,inspect_remote_94,
                                 label,local_state,merge)
+from rvvlab_epcc_results import discover_epcc_runs,select_test_run,sync_epcc_run
 
 class TestCenterPanel:
     def __init__(self,parent,studio):
@@ -83,7 +84,7 @@ class TestCenterPanel:
         ttk.Label(pane,text='Prochaine action',foreground='#5b6571').pack(anchor='w',pady=(2,4))
         ttk.Label(pane,textvariable=self.actions,wraplength=320,justify='left').pack(anchor='w')
         ttk.Button(pane,text='Voir le Test Runner et ses journaux',
-                   command=lambda:self.studio.notebook.select(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
+                   command=lambda:self.studio.open_advanced(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
         footer=ttk.Frame(p);footer.pack(fill='x',pady=(10,0))
         ttk.Label(footer,textvariable=self.notice,foreground='#40546c',wraplength=980).pack(anchor='w')
         ttk.Label(footer,text='PASS local ≠ terminé sur le serveur. Une archive locale ≠ validation JSON complète.',
@@ -179,7 +180,7 @@ class TestCenterPanel:
             self.notice.set('Une opération est en cours. Réessayez plus tard.');return
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connectez cette instance au serveur avant de vérifier les tests.');return
-        self.busy=True;self.notice.set('Vérification en cours : campagnes distantes + Test 94 (lecture seule)…')
+        self.busy=True;self.notice.set('Vérification en cours : NightRuns + tests EPCC 94/96/97 (lecture seule)…')
         ssh=self.studio.ssh;items=self._records();profile=self.studio.active_profile
         remote_name=self.studio.vars['remote_name'].get().strip()
         results=Path(self.studio.vars['results'].get()).expanduser()
@@ -187,8 +188,12 @@ class TestCenterPanel:
         def worker():
             try:
                 mapping,runs=check_remote_night(ssh,remote_name,items,results,history)
-                detail94=inspect_remote_94(ssh,remote_name,profile)
-                self.messages.put(('check_ok',(mapping,runs,detail94)))
+                epcc=discover_epcc_runs(ssh,remote_name) if profile=='EPCC' else []
+                try:detail94=inspect_remote_94(ssh,remote_name,profile)
+                except Exception as ex:
+                    detail94={'state':'unknown','id':'','packet':False,
+                              'proof':'Diagnostic Test94 indisponible : '+str(ex)[:120]}
+                self.messages.put(('check_ok',(mapping,runs,detail94,epcc)))
             except Exception as ex:self.messages.put(('check_error',str(ex)))
         threading.Thread(target=worker,daemon=True).start()
 
@@ -198,15 +203,23 @@ class TestCenterPanel:
                 try:event,data=self.messages.get_nowait()
                 except queue.Empty:break
                 if event=='check_ok':
-                    mapping,runs,test94=data;self.busy=False;self.server_checked=True;self.checked_at=time.monotonic()
+                    mapping,runs,test94,epcc=data;self.busy=False;self.server_checked=True;self.checked_at=time.monotonic()
                     self.remote=dict(mapping);self.remote94=test94
                     if test94.get('id'):
                         self.remote[TEST94_KEY]=test94
                         self.remote[TEST94_KEY]['state']=test94.get('state','unknown')
+                    if self.studio.active_profile=='EPCC':
+                        epcc94=select_test_run(epcc,'test94')
+                        epcc96=select_test_run(epcc,'test96')
+                        epcc97=select_test_run(epcc,'test97')
+                        if epcc94:self.remote[TEST94_KEY]=epcc94
+                        if epcc96:self.remote[TEST96_KEY]=epcc96
+                        if epcc97:self.remote[TEST97_KEY]=epcc97
                     # Remote inventory is a temporary UI snapshot, never silently
                     # overwrite the local benchmark validation or PASS evidence.
                     self.notice.set(f'Verification serveur terminée : {len(runs)} campagnes NightRuns, '
-                                    f'{len(mapping)} associées à un test; Test94 : {test94.get("state","inconnu")}.')
+                                    f'{len(mapping)} associées à un test; Test94 : {test94.get("state","inconnu")}; '
+                                    f'{len(epcc)} exécutions EPCC détectées.')
                     # The persistent badge and the Test Center must use the
                     # SAME freshly established EPCC evidence. A stale local
                     # 'Waiting for Slurm' must not survive an observed error.
@@ -219,6 +232,16 @@ class TestCenterPanel:
                     if self.pending94:
                         self.pending94=False
                         self._after_check94(test94)
+                elif event=='sync_ok':
+                    self.busy=False
+                    self.notice.set('Résultats EPCC vérifiés SHA256 et téléchargés : '+data)
+                    self.refresh_local()
+                    if hasattr(self.studio,'unified_campaigns'):
+                        self.studio.unified_campaigns.refresh_remote()
+                elif event=='sync_error':
+                    self.busy=False
+                    self.notice.set('Téléchargement EPCC refusé : '+str(data)[:220])
+                    messagebox.showerror('Téléchargement EPCC',str(data))
                 elif event=='check_error':
                     self.busy=False;self.pending94=False
                     self.notice.set('Échec vérification SSH : '+str(data)[:160]+' — état précédent non confirmé. Aucun test lancé.')
@@ -241,22 +264,50 @@ class TestCenterPanel:
     def download(self):
         item,state=self._item_and_state()
         if item is None:return
-        if state['downloaded']:
+        if state['downloaded'] and not (self.studio.active_profile=='EPCC'
+                and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY)
+                and self.remote.get(item['id'],{}).get('packet')
+                and self.remote[item['id']]['id']!=state.get('run_id')):
             self.open_results();return
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connectez SSH puis vérifiez le serveur avant le téléchargement.');return
+        if self.busy:
+            self.notice.set('Une opération est déjà en cours.');return
+        # Test94, Test96 and Test97 have their own EPCC directories, not NightRuns.
+        if self.studio.active_profile=='EPCC' and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY):
+            record=self.remote.get(item['id'])
+            if not record or not record.get('id'):
+                messagebox.showinfo('Synchronisation EPCC',
+                    'Vérifiez le serveur : aucune exécution EPCC associée au test sélectionné.');return
+            if not record.get('packet'):
+                messagebox.showinfo('Synchronisation EPCC',
+                    'Exécution EPCC trouvée : '+record['id']+'\n'
+                    'Mais aucune archive de résultats n’existe encore. Consultez les journaux Slurm ou compilation.');return
+            runid=record['id']
+            self.busy=True
+            self.notice.set('Téléchargement EPCC SHA256 en cours : '+runid+'…')
+            ssh=self.studio.ssh
+            remote=self.studio.vars['remote_name'].get().strip()
+            results=Path(self.studio.vars['results'].get()).expanduser()
+            def worker():
+                try:
+                    folder=sync_epcc_run(ssh,remote,runid,results)
+                    self.messages.put(('sync_ok',str(folder)))
+                except Exception as ex:self.messages.put(('sync_error',str(ex)))
+            threading.Thread(target=worker,daemon=True).start()
+            return
         if item['id']==TEST94_KEY:
             if not self.remote94 or not self.remote94.get('id') or not self.remote94.get('packet'):
                 messagebox.showinfo('Test94','Cliquez Vérifier le serveur. Aucun paquet Test94 confirmé actuellement.');return
             self.studio.remote94_last=dict(self.remote94)
-            self.studio.notebook.select(self.studio.test_runner_tab)
+            self.studio.open_advanced(self.studio.test_runner_tab)
             self.studio.test_runner.recover_test94();return
         run_id=state.get('run_id')
         if not run_id or item['id'] not in self.remote:
             messagebox.showinfo('Synchronisation',
                 'Aucun identifiant de campagne vérifié pour ce test.\n'
-                'Ouvrez Server Storage ou l’onglet Campaigns pour inspecter et synchroniser '
-                'une exécution distante. Aucune donnée ne sera téléchargée sans correspondance fiable.')
+                'Cliquez « Vérifier le serveur » puis choisissez une campagne. '
+                'Aucune donnée ne sera téléchargée sans correspondance fiable.')
             return
         self.notice.set('Synchronisation SHA256 de '+run_id+'…')
         self.studio._night_run('sync',run_id)
@@ -282,7 +333,7 @@ class TestCenterPanel:
                 'Une tentative Test 94 existe sur le serveur, sans preuve de fin et sans job actif trouvé.\n'
                 'Une nouvelle exécution pourrait dupliquer une tâche non visible.\n\n'
                 'Poursuivre vers la confirmation de lancement ?'):return
-        self.studio.notebook.select(self.studio.test_runner_tab)
+        self.studio.open_advanced(self.studio.test_runner_tab)
         self.studio.test_runner._run_test94_after_remote_check()
 
     def run(self):
@@ -300,5 +351,5 @@ class TestCenterPanel:
             'Lancer '+item['title']+' sur '+self.studio.active_profile+' ?\n\n'
             'Cette action peut occuper le serveur pendant plusieurs heures. '
             'Le statut affiché ne prouve pas à lui seul l’absence d’un autre travail.'):return
-        self.studio.notebook.select(self.studio.test_runner_tab)
+        self.studio.open_advanced(self.studio.test_runner_tab)
         self.studio.test_runner._run([item])

@@ -1,0 +1,6 @@
+{
+  "schema":1,"id":"test97-epcc-recover",
+  "title":"Test 97 — EPCC : statut et récupération résultats v5",
+  "description":"Recherche le Test97 sur EPCC, récupère un ZIP de résultats avec contrôle SHA256 ; ne soumet pas de calcul.",
+  "script":"97_epcc_v5_recover.py","enabled":true,"manual_only":true,"params":{}
+}

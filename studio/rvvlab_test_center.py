@@ -13,6 +13,8 @@ NIGHT_ID=re.compile(r'^night-\d{8}T\d{6}Z-[a-f0-9]{6}$')
 TEST94_ID=re.compile(r'^test94-\d{8}T\d{6}Z-[a-f0-9]{6}$')
 RUN_IN_TEXT=re.compile(r'night-\d{8}T\d{6}Z-[a-f0-9]{6}')
 TEST94_KEY='machine-compare-94-1h'
+TEST96_KEY='test96-epcc-8h'
+TEST97_KEY='test97-epcc-v5-3h'
 DONE={'completed','downloaded'}
 ACTIVE={'building','starting','preflight','build','screen','confirm','running','train','repeat','holdout','queued','pending','adaptive','specialists','stage1_focus'}
 BAD={'failed','safety_stop','error'}
@@ -58,8 +60,22 @@ def local_state(item,root,history=None):
             'run_id':'','checked':'Local uniquement'}
     if latest:
         result['run_id']=_run_from_local(latest) or ''
+        # EPCC archives are stored by validated remote ID, separately from
+        # a local script execution. Only a completed SHA256 sync counts.
+        if identifier in (TEST94_KEY,TEST96_KEY,TEST97_KEY):
+            run_prefix='test94-' if identifier==TEST94_KEY else 'test96-' if identifier==TEST96_KEY else 'test97-'
+            for folder in directories:
+                if not folder.name.startswith('EPCC-'+run_prefix):continue
+                if (folder/'SYNC_OK.txt').is_file() and (folder/('test94_results.zip' if identifier==TEST94_KEY else 'test96_results.zip' if identifier==TEST96_KEY else 'test97_results.zip')).is_file():
+                    result.update(state='downloaded',downloaded=True,
+                                  proof='Archive EPCC vérifiée SHA256 sur PC',
+                                  directory=str(folder),run_id=folder.name[5:])
+                    return result
+
         if identifier==TEST94_KEY:
-            packets=[p for p in [d/'test94_results.zip' for d in directories] if p.is_file() and p.stat().st_size>0]
+            packets=[p for p in [d/'test94_results.zip' for d in directories]
+                     if p.is_file() and p.stat().st_size>0
+                     and (not p.parent.name.startswith('EPCC-') or (p.parent/'SYNC_OK.txt').is_file())]
             if packets:
                 chosen=packets[0]
                 result.update(state='downloaded',downloaded=True,
@@ -86,7 +102,7 @@ def local_state(item,root,history=None):
             except OSError:pass
     if history.get('state')=='PASS' and result['state']=='unknown':
         result.update(state='local_pass',proof='Historique PASS local seulement')
-    if identifier!=TEST94_KEY and result['run_id']:
+    if identifier not in (TEST94_KEY,TEST96_KEY,TEST97_KEY) and result['run_id']:
         night=root/'NightRuns'/result['run_id']
         if (night/'SYNC_OK.txt').is_file():
             result.update(state='downloaded',downloaded=True,proof='Snapshot NightRuns synchronisé et SHA256 vérifié',directory=str(night))
@@ -142,6 +158,12 @@ def merge(local,remote=None):
     """Remote snapshot trumps history except downloaded files remain visible."""
     merged=dict(local)
     if remote is not None:
+        if local['downloaded']:
+            merged['proof']=local['proof']+' · Dernier état distant : '+str(remote.get('state') or 'inconnu')
+            if str(remote.get('id') or '')!=str(merged.get('run_id') or ''):
+                merged['proof']+=' · Autre exécution sur EPCC : '+str(remote.get('id'))
+            merged['checked']='Serveur vérifié'
+            return merged
         remote_result=remote_state(remote)
         if remote_result!='unknown':
             merged['state']='downloaded' if remote_result=='completed' and local['downloaded'] else remote_result

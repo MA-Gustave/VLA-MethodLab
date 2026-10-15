@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test95-cloudv-8h",
+  "title": "Test 95 — A2 packed ablations + 4K gate (8h · Cloud-V)",
+  "description": "One-click Cloud-V: 7 native RISC-V variants, correct-by-fallback per corpus, fixed 8h wall budget including builds, independent holdout final 2h, SHA256 result archive. No production deployment.",
+  "script": "95_cloudv_8h.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {"seconds": 28800}
+}

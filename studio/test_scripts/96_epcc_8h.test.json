@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test96-epcc-8h",
+  "title": "Test 96 — EPCC A2 packed + seuil 4K (8h, Slurm)",
+  "description": "EPCC UNIQUEMENT : 7 variantes A2, compilation croisee LLVM16 sur login x86, 8 h sur noeud RISC-V Slurm avec 2 h de holdout, correction JSON, logs et recuperation SHA256. Ne lance jamais Cloud-V.",
+  "script": "96_epcc_8h.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {"seconds": 28800, "epcc_node": "rvc02"}
+}

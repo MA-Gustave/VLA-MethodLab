@@ -1,0 +1,181 @@
+"""Read-only EPCC run discovery and explicit SHA256-checked results recovery.
+
+Never submit a job, create a server directory, or infer success from the
+existence of a timestamped run folder. Results are saved per verified run ID.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import tempfile
+import zipfile
+
+RUN_TYPES = {
+    'test94': dict(pattern=re.compile(r'^test94-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                   directory='test94-runs', status='status94.json',
+                   archive='test94_results.zip', test_id='machine-compare-94-1h',
+                   required=('machine94.json','status94.json','results94.csv','summary94.json','REPORT_94.md'),
+                   allowed=('builds.json','machine94.json','status94.json','results94.csv','summary94.json','REPORT_94.md')),
+    'test97': dict(pattern=re.compile(r'^test97-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                   directory='test97-epcc-runs', status='status97.json',
+                   archive='test97_results.zip', test_id='test97-epcc-v5-3h',
+                   required=('builds97.json','machine97.json','status97.json','results97.csv',
+                             'summary97.json','REPORT_97.md','manifest97.json'),
+                   allowed=('builds97.json','machine97.json','status97.json','results97.csv',
+                            'summary97.json','REPORT_97.md','manifest97.json')),
+    'test96': dict(pattern=re.compile(r'^test96-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                   directory='test96-epcc-runs',status='status96.json',
+                   archive='test96_results.zip',test_id='test96-epcc-8h',
+                   required=('builds96.json','machine96.json','status96.json','results96.csv','summary96.json','REPORT_96.md','manifest96.json'),
+                   allowed=('builds96.json','machine96.json','status96.json','results96.csv','summary96.json','REPORT_96.md','manifest96.json')),
+}
+MAX_ZIP_BYTES=512*1024*1024
+MAX_EXTRACTED_BYTES=1024*1024*1024
+
+
+def _read_json(sftp, path):
+    try:
+        with sftp.open(path, 'rb') as f:
+            raw=f.read(65_537)
+        if len(raw)>65_536:return {}
+        obj=json.loads(raw.decode('utf-8') if isinstance(raw, bytes) else raw)
+        return obj if isinstance(obj,dict) else {}
+    except (OSError,ValueError,UnicodeError,TypeError):return {}
+
+
+def _listdir(sftp,path):
+    try:return sftp.listdir(path)
+    except OSError as ex:
+        # Missing optional run folders are normal. Permissions and SSH errors
+        # are not: propagate them rather than incorrectly claiming zero runs.
+        if getattr(ex,'errno',None)==2 or 'no such file' in str(ex).lower():return []
+        raise
+
+
+def discover_epcc_runs(ssh, remote_name, *, limit=75):
+    """Return only runs in the two known EPCC folders; no name heuristics."""
+    base=ssh.base(remote_name)
+    rows=[]
+    with ssh.client.open_sftp() as sftp:
+        for kind,cfg in RUN_TYPES.items():
+            parent=base+'/'+cfg['directory']
+            names=sorted((n for n in _listdir(sftp,parent) if cfg['pattern'].fullmatch(n)),reverse=True)[:limit]
+            for name in names:
+                path=parent+'/'+name
+                status=_read_json(sftp,path+'/'+cfg['status'])
+                packet=False
+                try:packet=0<sftp.stat(path+'/'+cfg['archive']).st_size<=MAX_ZIP_BYTES
+                except OSError:pass
+                state=str(status.get('state') or '').lower()
+                rows_count=status.get('rows',0)
+                if not isinstance(rows_count,int) or isinstance(rows_count,bool) or rows_count<0:rows_count=0
+                # A marker alone does not establish a completed experiment.
+                if state=='completed' and (not packet or rows_count==0):state='unknown'
+                if not state:state='unknown'
+                proof=('Archive disponible sur EPCC; état '+state if packet else
+                       'Pas d’archive de résultats; état '+state)
+                rows.append({'id':name,'kind':kind,'test_id':cfg['test_id'],'state':state,
+                             'rows':rows_count,'observations':rows_count,
+                             'packet':packet,'proof':proof,'workdir':path,
+                             'last_update':status.get('last_update_utc') or status.get('last_update'),
+                             'started_utc':status.get('start_utc') or status.get('started_utc'),
+                             'phase':status.get('phase') or '',
+                             'reason':status.get('reason') or status.get('stop_reason') or ''})
+    return sorted(rows,key=lambda x:x['id'],reverse=True)
+
+
+def select_test_run(rows,kind):
+    """Prefer latest available *packet*, otherwise latest attempt.
+
+    The caller must still display the real state; an older packet does not
+    make a newer failed run successful.
+    """
+    candidates=[row for row in rows if row['kind']==kind]
+    if not candidates:return None
+    return next((r for r in candidates if r['packet']),candidates[0])
+
+
+def _sha256(path):
+    h=hashlib.sha256()
+    with Path(path).open('rb') as f:
+        for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
+    return h.hexdigest()
+
+
+def _check_zip(path, cfg):
+    """Validate shape, contents and CRC before extracting any results."""
+    with zipfile.ZipFile(path) as z:
+        names=z.namelist()
+        if len(set(names))!=len(names) or not set(cfg['required']).issubset(names):
+            raise ValueError('Archive incomplète ou noms dupliqués')
+        if not set(names).issubset(cfg['allowed']):
+            raise ValueError('Archive contenant des fichiers inattendus')
+        total=0
+        for info in z.infolist():
+            if info.is_dir() or info.file_size>MAX_EXTRACTED_BYTES:
+                raise ValueError('Entrée ZIP non conforme')
+            total+=info.file_size
+            if total>MAX_EXTRACTED_BYTES:raise ValueError('Archive décompressée trop volumineuse')
+        bad=z.testzip()
+        if bad:raise ValueError('CRC ZIP invalide : '+bad)
+
+
+def sync_epcc_run(ssh,remote_name,run_id,local_root):
+    """Explicit EPCC result download. Never alters remote files.
+
+    Verifies remote SHA256, optional server-side .sha256 marker, ZIP CRC,
+    required files and bounded decompression. Writes SYNC_OK only at the end.
+    """
+    kind=next((name for name,cfg in RUN_TYPES.items() if cfg['pattern'].fullmatch(str(run_id))),None)
+    if kind is None:raise ValueError('Identifiant EPCC inconnu : '+str(run_id))
+    cfg=RUN_TYPES[kind]
+    root=ssh.base(remote_name)+'/'+cfg['directory']+'/'+run_id
+    remote=root+'/'+cfg['archive']
+    target=Path(local_root).expanduser()/'TestRunner'/cfg['test_id']/('EPCC-'+run_id)
+    target.mkdir(parents=True,exist_ok=True)
+    archive=target/cfg['archive']
+    part=target/(cfg['archive']+'.part')
+    expected=''
+    try:
+        with ssh.client.open_sftp() as sftp:
+            size=sftp.stat(remote).st_size
+            if not 0<size<=MAX_ZIP_BYTES:raise ValueError('Archive absente, vide ou trop volumineuse')
+            # The .sha256 marker is useful but optional for older campaigns.
+            try:
+                with sftp.open(remote.replace('.zip','.sha256'),'rb') as f:
+                    content=f.read(512)
+                value=(content.decode('ascii') if isinstance(content,bytes) else content).split()[0].lower()
+                if re.fullmatch(r'[a-f0-9]{64}',value):expected=value
+            except (OSError,UnicodeError,IndexError):pass
+            sftp.get(remote,str(part))
+        if part.stat().st_size!=size:raise RuntimeError('Transfert incomplet')
+        got=_sha256(part)
+        remote_hash=ssh.exec_text('sha256sum '+shlex.quote(remote)).strip().split()[0].lower()
+        if not re.fullmatch(r'[0-9a-f]{64}',remote_hash) or remote_hash!=got:
+            raise RuntimeError('SHA256 EPCC différent du téléchargement')
+        if expected and expected!=got:raise RuntimeError('SHA256 du manifeste distant différent')
+        _check_zip(part,cfg)
+        # Commit the fully verified archive first, then extract through bounded
+        # per-file temp copies. Do not let ZIP paths dictate the destination.
+        os.replace(part,archive)
+        with zipfile.ZipFile(archive) as z:
+            for name in z.namelist():
+                tmp=target/(name+'.part')
+                try:
+                    with z.open(name) as src,tmp.open('wb') as dst:
+                        while True:
+                            chunk=src.read(1024*1024)
+                            if not chunk:break
+                            dst.write(chunk)
+                    os.replace(tmp,target/name)
+                finally:tmp.unlink(missing_ok=True)
+        marker=target/'SYNC_OK.txt'
+        tmp=target/'SYNC_OK.txt.part'
+        tmp.write_text('SHA256-verified EPCC '+kind+' archive: '+got+'\nrun_id: '+run_id+'\n',encoding='utf8')
+        os.replace(tmp,marker)
+        return target
+    finally:part.unlink(missing_ok=True)

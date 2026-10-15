@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test96-epcc-recover",
+  "title": "Test 96 — EPCC : statut et recuperation Slurm",
+  "description": "EPCC UNIQUEMENT : consulte le dernier Test96 soumis depuis ce Studio, telecharge les resultats verifies SHA256 a la fin. Ne lance jamais de job.",
+  "script": "96_epcc_recover.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {}
+}

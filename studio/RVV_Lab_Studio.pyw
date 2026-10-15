@@ -61,7 +61,7 @@ class Studio:
     def __init__(self,root):
         self.root=root
         root.title('RVV-VLA Lab Studio — '+(TARGET or 'Dual Machine')+' — simdjson 5.0.3')
-        root.geometry('1150x790')
+        root.geometry('1200x800')
         root.minsize(850,620)
         self.ssh=StudioSSH()
         self.events=queue.Queue()
@@ -147,99 +147,114 @@ class Studio:
         self._build()
         self.root.after(75,self._poll)
         self.root.after(1000,self._tick_clock)
-        self.root.after(35000,self._test94_periodic)
+        # Status comes from the existing Test Runner 60-second scheduler.
         self.root.protocol('WM_DELETE_WINDOW',self._quit)
 
     def _build(self):
-        shell=ttk.Frame(self.root);shell.pack(fill='both',expand=True)
-        canvas=tk.Canvas(shell,highlightthickness=0,borderwidth=0)
-        scrollbar=ttk.Scrollbar(shell,orient='vertical',command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side='right',fill='y');canvas.pack(side='left',fill='both',expand=True)
-        main=ttk.Frame(canvas,padding=10)
-        inner=canvas.create_window((0,0),window=main,anchor='nw')
-        def sync_region(_event=None):
-            canvas.configure(scrollregion=canvas.bbox('all'))
-        def resize_outer(event):
-            canvas.itemconfigure(inner,width=event.width)
-            canvas.itemconfigure(inner,height=max(event.height,main.winfo_reqheight()))
-            sync_region()
-        main.bind('<Configure>',sync_region)
-        canvas.bind('<Configure>',resize_outer)
-        self.main_canvas=canvas
-        def wheel(event):
-            # Do not steal wheel events from text, list, combobox or tree scrollbars.
-            widget=event.widget
-            while widget is not None:
-                if isinstance(widget,(tk.Text,tk.Listbox,ttk.Treeview,ttk.Combobox,tk.Scrollbar,ttk.Scrollbar)):
-                    return
-                if widget is canvas:break
-                widget=getattr(widget,'master',None)
-            step=(-1 if event.delta>0 else 1) if getattr(event,'delta',0) else (-1 if event.num==4 else 1)
-            canvas.yview_scroll(step*3,'units')
-            return 'break'
-        self.root.bind_all('<MouseWheel>',wheel,add='+')
-        self.root.bind_all('<Button-4>',wheel,add='+')
-        self.root.bind_all('<Button-5>',wheel,add='+')
-        header=ttk.Frame(main);header.pack(fill='x')
-        ttk.Label(header,text='RVV-VLA Lab Studio',font=('Segoe UI',16,'bold')).pack(side='left')
-        ttk.Label(header,text='simdjson 5.0.3 · RISC-V RVV 1.0 · native profiling',foreground='#555').pack(side='left',padx=14)
-        self.connect_btn=ttk.Button(header,text='SSH Connect',command=self.connect)
-        self.connect_btn.pack(side='right')
-        self.disconnect_btn=ttk.Button(header,text='Disconnect',command=self.disconnect,state='disabled')
-        self.disconnect_btn.pack(side='right',padx=6)
-        ttk.Label(header,textvariable=self.local_clock,font=('Consolas',9)).pack(side='right',padx=(0,12))
-        ttk.Label(main,textvariable=self.status).pack(anchor='w',pady=(4,7))
-        cfg=ttk.Frame(main);cfg.pack(fill='x',pady=(0,10))
-        cfg.columnconfigure(1,weight=1)
-        ttk.Label(cfg,text='Target machine:').grid(row=0,column=0,sticky='w',pady=(0,6))
-        chooser=ttk.Frame(cfg);chooser.grid(row=0,column=1,columnspan=3,sticky='w',pady=(0,6))
-        for name,title in (('Cloud-V','Cloud-V — direct RISC-V'),
-                           ('EPCC','EPCC — via SSH gateway')):
-            group=ttk.Frame(chooser);group.pack(side='left',padx=(0,22))
+        """One primary Tests workspace; specialized legacy capabilities behind Advanced.
+
+        The trusted TestRunner and SSH backend are kept intact. No second launch
+        path or polling timer is introduced by the redesign.
+        """
+        from rvvlab_studio_theme import apply_theme
+        apply_theme(self.root)
+        main=ttk.Frame(self.root,style='App.TFrame',padding=(22,16))
+        main.pack(fill='both',expand=True)
+
+        # Global context is always visible, even while viewing advanced tools.
+        header=ttk.Frame(main,style='App.TFrame')
+        header.pack(fill='x',pady=(0,14))
+        identity=ttk.Frame(header,style='App.TFrame')
+        identity.pack(side='left',fill='x',expand=True)
+        ttk.Label(identity,text='RVV / VLA',style='Brand.TLabel').pack(anchor='w')
+        ttk.Label(identity,text='LAB STUDIO   •   simdjson 5.0.3   •   RISC-V RVV 1.0',
+                  style='Eyebrow.TLabel').pack(anchor='w',pady=(1,0))
+        ttk.Label(header,textvariable=self.local_clock,style='Muted.TLabel').pack(side='right',padx=(12,0))
+        self.connect_btn=ttk.Button(header,text='Connecter SSH',command=self.connect,style='Accent.TButton')
+        self.connect_btn.pack(side='right',padx=(8,0))
+        self.disconnect_btn=ttk.Button(header,text='Déconnecter',command=self.disconnect,state='disabled')
+        self.disconnect_btn.pack(side='right')
+
+        context=ttk.Frame(main,style='Surface.TFrame',padding=(14,11))
+        context.pack(fill='x',pady=(0,12))
+        ttk.Label(context,text='MACHINE',style='PanelCaption.TLabel').pack(side='left',padx=(0,14))
+        for name,title in (('Cloud-V','Cloud-V  •  RVV natif'),('EPCC','EPCC  •  Slurm')):
+            group=ttk.Frame(context,style='Surface.TFrame')
+            group.pack(side='left',padx=(0,20))
             ttk.Radiobutton(group,text=title,variable=self.machine_choice,value=name,
-                            state=('disabled' if TARGET and name!=TARGET else 'normal'),
-                            command=self.switch_machine).pack(side='left')
-            marker=tk.Label(group,textvariable=self.target_test94_labels[name],anchor='w',
-                            foreground='#6b7280',font=('Segoe UI',9))
-            marker.pack(side='left',padx=(5,0))
-            self.target_test94_widgets[name]=marker
-        self._test94_draw_badges()
-        ttk.Label(cfg,text='SSH profile (.env):').grid(row=1,column=0,sticky='w')
-        ttk.Entry(cfg,textvariable=self.vars['env_path']).grid(row=1,column=1,sticky='ew',padx=7)
-        ttk.Button(cfg,text='…',width=3,command=self.browse_env).grid(row=1,column=2)
-        ttk.Button(cfg,text='Open .env',command=self.edit_env).grid(row=1,column=3,padx=5)
-        ttk.Button(cfg,text='Prepare EPCC profile',command=self.prepare_epcc_env).grid(
-            row=2,column=1,sticky='w',pady=(5,0))
-        notebook=ttk.Notebook(main);notebook.pack(fill='both',expand=True)
-        self.center_tab=ttk.Frame(notebook,padding=12)
-        notebook.add(self.center_tab,text='Centre des tests')
-        self.tabs=[]
-        for title in ('SSH Console','RVV Tests','Reports','Server Storage','8h Exploration'):
-            f=ttk.Frame(notebook,padding=10);notebook.add(f,text=title);self.tabs.append(f)
-        self._console_ui(self.tabs[0]);self._tests_ui(self.tabs[1]);self._reports_ui(self.tabs[2]);self._storage_ui(self.tabs[3]);self._night_ui(self.tabs[4])
-        # RVVLAB_V5_TEST_RUNNER_TAB_V1
-        from rvvlab_test_runner import TestRunnerPanel
-        self.test_runner_tab=ttk.Frame(notebook,padding=10)
-        notebook.add(self.test_runner_tab,text='Test Runner')
-        self.test_runner=TestRunnerPanel(self.test_runner_tab,self)
-        from rvvlab_test_center_ui import TestCenterPanel
-        self.test_center=TestCenterPanel(self.center_tab,self)
-        # RVVLAB_V5_CAMPAIGN_UNIFIED_V1
-        from rvvlab_unified_campaigns import UnifiedCampaigns
-        self.unified_campaigns=UnifiedCampaigns(self.test_runner,self)
-        # Compatibility widgets remain instantiated, but their redundant tab is hidden.
-        notebook.hide(self.tabs[4])
-        self.test_runner.refresh_remote=self.unified_campaigns.refresh_remote
-        # RVVLAB_STUDIO_ENGLISH_V503
+                  state=('disabled' if TARGET and name!=TARGET else 'normal'),
+                  command=self.switch_machine).pack(side='left')
+        ttk.Label(context,textvariable=self.status,style='Context.TLabel',wraplength=510).pack(
+                  side='right',fill='x',expand=True)
+        # The retired per-test 94 badges are no longer competing with global status.
+        self.target_test94_widgets={}
+
+        notebook=ttk.Notebook(main,style='Main.TNotebook')
+        notebook.pack(fill='both',expand=True)
         self.notebook=notebook
+        self.simple_tests_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,15))
+        notebook.add(self.simple_tests_tab,text='   Tests   ')
+        self.advanced_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,12))
+        notebook.add(self.advanced_tab,text='   Outils avancés   ')
+
+        # Keep all existing specialist views, but do not duplicate the primary
+        # workflow in competing top-level tabs.
+        adv=ttk.Notebook(self.advanced_tab)
+        adv.pack(fill='both',expand=True)
+        self.advanced_notebook=adv
+        profile=ttk.Frame(adv,padding=12)
+        adv.add(profile,text='Connexion et profils')
+        profile.columnconfigure(1,weight=1)
+        ttk.Label(profile,text='Configuration SSH',style='Section.TLabel').grid(
+            row=0,column=0,columnspan=4,sticky='w',pady=(0,12))
+        ttk.Label(profile,text='Profil (.env)').grid(row=1,column=0,sticky='w')
+        ttk.Entry(profile,textvariable=self.vars['env_path']).grid(row=1,column=1,sticky='ew',padx=9)
+        ttk.Button(profile,text='Parcourir',command=self.browse_env).grid(row=1,column=2)
+        ttk.Button(profile,text='Ouvrir .env',command=self.edit_env).grid(row=1,column=3,padx=(7,0))
+        ttk.Button(profile,text='Préparer un profil EPCC',command=self.prepare_epcc_env).grid(
+            row=2,column=1,sticky='w',pady=(10,0))
+        ttk.Label(profile,text='La connexion active et les tests distants ne sont jamais '
+             'modifiés par une actualisation du statut.',style='Muted.TLabel').grid(
+             row=3,column=0,columnspan=4,sticky='w',pady=(20,0))
+
+        self.tabs=[]
+        for title in ('Console SSH','Benchmarks manuels','Rapports','Stockage','Exploration historique'):
+            frame=ttk.Frame(adv,padding=10)
+            adv.add(frame,text=title)
+            self.tabs.append(frame)
+        self._console_ui(self.tabs[0])
+        self._tests_ui(self.tabs[1])
+        self._reports_ui(self.tabs[2])
+        self._storage_ui(self.tabs[3])
+        self._night_ui(self.tabs[4])
+
+        self.center_tab=ttk.Frame(adv,padding=10)
+        adv.add(self.center_tab,text='Centre historique')
+        self.test_runner_tab=ttk.Frame(adv,padding=10)
+        adv.add(self.test_runner_tab,text='Scripts historiques')
+        from rvvlab_test_runner import TestRunnerPanel
+        from rvvlab_test_center_ui import TestCenterPanel
+        from rvvlab_simple_tests import SimpleTestsPanel
+        from rvvlab_unified_campaigns import UnifiedCampaigns
+        self.test_runner=TestRunnerPanel(self.test_runner_tab,self)
+        self.test_center=TestCenterPanel(self.center_tab,self)
+        self.simple_tests=SimpleTestsPanel(self.simple_tests_tab,self)
+        self.unified_campaigns=UnifiedCampaigns(self.test_runner,self)
+        self.test_runner.refresh_remote=self.unified_campaigns.refresh_remote
+        # The Test Runner 60-second scheduler remains the only campaign refresh.
+
+    def open_advanced(self, tab=None):
+        self.notebook.select(self.advanced_tab)
+        if tab is not None:
+            self.advanced_notebook.select(tab)
 
     def _center_auto_check(self,attempt=0):
         """Auto-refresh only status, respecting concurrent SSH activity."""
         if not self.ssh.connected() or self.connecting:return
         if (self.night_busy or self.storage_busy or self.job_busy or
             self._test94_poll_busy or self.unified_campaigns.busy or
-            self.test_runner.busy or self.test_center.busy):
+            self.test_runner.busy or self.test_center.busy or
+            self.simple_tests.busy or self.simple_tests.poll_busy):
             if attempt<5:self.root.after(4000,lambda:self._center_auto_check(attempt+1))
             return
         self.test_center.check_remote()
@@ -288,13 +303,14 @@ class Studio:
     def _test94_periodic(self):
         """Poll the connected target read-only, at most every 35 seconds."""
         self._test94_check_now()
-        self.root.after(35000,self._test94_periodic)
+        # Status comes from the existing Test Runner 60-second scheduler.
 
     def _test94_check_now(self):
         if (self._test94_poll_busy or not self.ssh.connected() or self.connecting
                 or self.test_runner.busy or self.test_runner.poll_busy
                 or self.storage_busy or self.night_busy or self.job_busy
-                or self.unified_campaigns.busy or self.unified_campaigns.poll_busy):
+                or self.unified_campaigns.busy or self.unified_campaigns.poll_busy
+                or self.simple_tests.busy or self.simple_tests.poll_busy):
             return
         from rvvlab_target_status import latest_run
         profile=self.active_profile
@@ -852,7 +868,8 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         if target==previous:return
         if (self.connecting or self.job_busy or self.storage_busy or self.night_busy or
             self.test_runner.busy or self.test_runner.poll_busy or self._test94_poll_busy or
-            self.unified_campaigns.busy or self.unified_campaigns.poll_busy):
+            self.unified_campaigns.busy or self.unified_campaigns.poll_busy or self.test_center.busy or
+            self.simple_tests.busy or self.simple_tests.poll_busy):
             self.machine_choice.set(previous)
             messagebox.showwarning('Machine in use',
                 'Wait for local tests, synchronization, or remote refresh to finish before switching.')
@@ -874,7 +891,6 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         self._test94_load_cached(target)
         self._test94_draw_badges()
         self.test_runner.epcc_nodes.clear()
-        self.test_runner.node_combo['values']=[]
         self.test_runner.set_machine_mode(target)
         self.vars['env_path'].set(self.machine_envs[target])
         self.vars['results'].set(self.machine_results[target])
@@ -884,6 +900,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         self.test_runner.refresh_local()
         self.test_center.remote.clear();self.test_center.remote94=None;self.test_center.server_checked=False
         self.test_center.refresh_local()
+        self.simple_tests.profile_changed()
         self.night_rows=[]
         self.status.set(f'{target} selected — click SSH Connect. Detached remote tests continue running.')
         self._save_settings()
@@ -1238,8 +1255,9 @@ RVVLAB_JUMP_ALLOW_AGENT=1
                     self.status.set(msg);self.console_status.set('SSH console connected')
                     self.connect_btn.configure(state='disabled');self.disconnect_btn.configure(state='normal')
                     self._enable_console(True)
-                    self.shell_entry.focus_set()
-                    self.root.after(1000,self.unified_campaigns.refresh_remote)
+                    # Never steal keyboard focus from the active Tests workspace.
+                    # Main Tests refresh will update the historic campaign view.
+                    self.root.after(1500,self.simple_tests.refresh)
                     self._test94_live_profiles.discard(self.active_profile)
                     self._test94_draw_badges()
                     self.root.after(2400,self._test94_check_now)

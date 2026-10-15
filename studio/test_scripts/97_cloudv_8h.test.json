@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test97-cloudv-8h",
+  "title": "Test 97 — Cloud-V · seuils A2 4/5/6/7/8/10 Kio (8h, isolé)",
+  "description": "One-click Cloud-V: 6 variants, A2 before/after each group, anti-concurrency checks, new seeds, real JSON examples, paired 2h holdout and verified SHA256 results. No engine changes.",
+  "script": "97_cloudv_8h.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {"seconds": 28800}
+}

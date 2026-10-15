@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test97-epcc-v5-3h",
+  "title": "Test 97 — EPCC RVV A2 optimisé vs simdjson officiel v5 (3h)",
+  "description": "Compare upstream GitHub v5.0.3 + v5.0.4 (backend fallback) avec notre A2 RVV et A2 seuil 8192. Compile sur login, mesures DOM appariées sur Slurm rvc02, validation par document, 45 minutes holdout, ZIP SHA256. Manuel uniquement.",
+  "script": "97_epcc_v5_compare.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {"seconds":10800,"epcc_node":"rvc02"}
+}

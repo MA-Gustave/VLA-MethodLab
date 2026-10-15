@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test95-cloudv-recover",
+  "title": "Test 95 — Récupérer la campagne Cloud-V",
+  "description": "Read-only recovery/check of the latest Test95 Cloud-V run in this Studio results directory; retrieve results with SHA256 once terminal.",
+  "script": "95_cloudv_recover.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {}
+}

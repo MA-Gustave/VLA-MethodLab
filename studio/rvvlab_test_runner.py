@@ -325,6 +325,8 @@ def run_trial(item,studio,result_root,emit,stop_event):
     try:
         result=mod.execute(ctx,dict(item['params']))
     except Exception as error:
+        # Keep the actual failure visible to Tests simples even after Studio restarts.
+        logger('FAIL: '+repr(error))
         if item['id']=='machine-compare-94-1h':
             # An SSH/monitoring failure after the detached launch does NOT
             # establish that the remote benchmark itself failed.
@@ -369,6 +371,8 @@ class TestRunnerPanel:
     def __init__(self,parent,studio):
         self.parent=parent;self.studio=studio;self.events=queue.Queue();self.stop_event=threading.Event()
         self.busy=False;self.poll_busy=False;self.items=[];self.item_by_tree={}
+        self.verified_campaigns={};self.verified_profile=None
+        self.verified_processes=[];self.verification_error=None
         self.folder=tk.StringVar(value=str(SCRIPTS_DIR))
         self.run_id=tk.StringVar(value='night-20261009T231943Z-26725b')
         self.status=tk.StringVar(value='No automatic execution. Review the previous campaign first.')
@@ -410,36 +414,26 @@ class TestRunnerPanel:
         ttk.Button(info,text='Read status',command=self.refresh_remote).grid(row=1,column=3,padx=5)
         ttk.Label(info,textvariable=self.remote_status,foreground='#555').grid(row=2,column=0,columnspan=4,sticky='w')
         ttk.Label(info,textvariable=self.status).grid(row=3,column=0,columnspan=4,sticky='w')
-        # Test94: All deployment, compile, submit and downloads are handled here.
+        # Test94 is launched from the ordinary manifest list / Test Center.
+        # Keep EPCC defaults internally but no dedicated Test94 toolbar,
+        # comparison button or machine settings block in Test Runner.
         self.epcc_node=tk.StringVar(value='rvc02')
         self.epcc_account=tk.StringVar(value='')
-        self.epcc_node_status=tk.StringVar(value='EPCC: rvc02 preferred (verify availability with Detect nodes).')
+        self.epcc_node_status=tk.StringVar(value='EPCC nodes not checked yet')
         self.epcc_nodes={}
-        launch94=ttk.LabelFrame(self.parent,text='Test 94 — 1 hour on selected machine · No terminal commands',padding=8)
-        launch94.pack(fill='x',pady=(8,3))
-        launch94.columnconfigure(1,weight=1)
-        self.epcc_settings=ttk.Frame(launch94)
-        self.epcc_settings.pack(fill='x',pady=(0,3))
-        settings94=self.epcc_settings
-        settings94.columnconfigure(1,weight=1)
-        ttk.Label(settings94,text='EPCC RISC-V node').grid(row=0,column=0,sticky='w')
-        self.node_combo=ttk.Combobox(settings94,textvariable=self.epcc_node,values=[],width=23,state='readonly')
-        self.node_combo.grid(row=0,column=1,sticky='ew',padx=6)
-        ttk.Button(settings94,text='Detect nodes',command=self.detect_epcc_nodes).grid(row=0,column=2,padx=5)
-        ttk.Label(settings94,text='Slurm account').grid(row=0,column=3,padx=4)
-        ttk.Entry(settings94,textvariable=self.epcc_account,width=14).grid(row=0,column=4,sticky='ew')
-        ttk.Label(settings94,textvariable=self.epcc_node_status,foreground='#555').grid(row=1,column=0,columnspan=5,sticky='w',pady=3)
-        buttons94=ttk.Frame(launch94);buttons94.pack(fill='x',pady=3)
-        self.start94=ttk.Button(buttons94,text='Run Test 94 (1h)',command=self.run_test94)
-        self.start94.pack(side='left',padx=(0,8))
-        self.set_machine_mode(self.studio.active_profile)
-        ttk.Button(buttons94,text='Recover Test94 results',command=self.recover_test94).pack(side='left',padx=4)
-        ttk.Button(buttons94,text='Compare Cloud-V / EPCC',command=self.compare_test94).pack(side='left',padx=4)
         columns=('title','script','status')
         treebox=ttk.Frame(self.parent);treebox.pack(fill='both',expand=True,pady=(8,3))
         tree=ttk.Treeview(treebox,columns=columns,show='headings',height=7,selectmode='extended')
         self.tree=tree
-        for col,heading,width in [('title','Test',450),('script','Local script',260),('status','State',175)]:
+        self.live_style=ttk.Style()
+        tree.configure(style='RVVLiveRunner.Treeview')
+        self.live_style.map('RVVLiveRunner.Treeview',background=[('selected','#3470A4')],foreground=[('selected','#FFFFFF')])
+        tree.bind('<<TreeviewSelect>>',lambda _e:self._highlight_selection())
+        tree.tag_configure('live_active',background='#FFF0B3',foreground='#795000')
+        tree.tag_configure('live_ok',background='#D9F6E4',foreground='#135C3E')
+        tree.tag_configure('live_failed',background='#FDE2E2',foreground='#9B1C1C')
+        tree.tag_configure('live_pending',background='#F6F0D5',foreground='#795000')
+        for col,heading,width in [('title','Test',420),('script','Local script',225),('status','État distant',290)]:
             tree.heading(col,text=heading);tree.column(col,width=width,anchor='w')
         vbar=ttk.Scrollbar(treebox,orient='vertical',command=tree.yview)
         hbar=ttk.Scrollbar(treebox,orient='horizontal',command=tree.xview)
@@ -468,10 +462,12 @@ class TestRunnerPanel:
         if choice:self.folder.set(choice);self.refresh_local()
 
     def refresh_local(self):
+        chosen={self.item_by_tree[i]['id'] for i in self.tree.selection() if i in self.item_by_tree}
         self.items,errors=discover(Path(self.folder.get()))
         self.history=self._read_history()
         for row in self.tree.get_children():self.tree.delete(row)
         self.item_by_tree={}
+        restored=[]
         for item in self.items:
             previous=self.history.get(item['id'],{})
             done=(previous.get('script_sha256')==item['script_sha']
@@ -480,12 +476,109 @@ class TestRunnerPanel:
             state='PASS (already run)' if done else ('Ready (manual)' if item['enabled'] else 'Disabled')
             ident=self.tree.insert('','end',values=(display_test_title(item),item['script_path'].name,state))
             self.item_by_tree[ident]=item
+            if item['id'] in chosen:restored.append(ident)
+        if restored:self.tree.selection_set(restored)
         if errors:self._log('ERRORS: '+' | '.join(errors))
+        self._render_verified_campaigns()
         self.status.set(f'{len(self.items)} test(s) found; {len(errors)} error(s). No automatic start.')
 
+    def clear_verified_campaigns(self):
+        self.verified_campaigns={};self.verified_profile=None
+        self.verified_processes=[];self.verification_error=None
+        self._render_verified_campaigns()
+
+    def mark_verification_unavailable(self,profile,error):
+        if self.studio.active_profile != profile:return
+        self.verification_error=str(error)
+        self._render_verified_campaigns()
+
+    def apply_verified_campaigns(self,profile,data,processes):
+        '''UI thread only: remote read was performed by Tests simples.
+
+        A launcher result/PASS never establishes remote completion.
+        '''
+        if self.studio.active_profile!=profile:return
+        self.verified_profile=profile
+        self.verified_campaigns=data or {}
+        self.verified_processes=processes or []
+        self.verification_error=None
+        self._render_verified_campaigns()
+
+    def _render_verified_campaigns(self):
+        from rvvlab_simple_tests import PROFILES,ACTIVE,_local_attempt,manifest_target,test_id
+        profile=self.studio.active_profile
+        for iid,item in list(self.item_by_tree.items()):
+            if not self.tree.exists(iid):continue
+            target=manifest_target(item['id'])
+            if target is None:continue
+            n,allowed=target
+            row=None
+            if profile not in allowed:
+                label,tag='— Autre machine',''
+            elif self.verification_error:
+                label,tag='⚠ Serveur non vérifié','live_pending'
+            elif self.verified_profile != profile:
+                label,tag='○ En attente vérification',''
+            else:
+                rows=self.verified_campaigns.get(n,[])
+                row=rows[0] if rows else None
+                local=_local_attempt(self.studio.vars['results'].get(),n,profile)
+                process=bool(n=='97' and profile=='Cloud-V' and self.verified_processes)
+                if row:
+                    state=str(row.get('state','')).lower()
+                    if state=='completed' and row.get('validated') and row.get('packet'):
+                        label,tag='🟢 Terminé — ZIP prêt','live_ok'
+                    elif state in ('failed','safety_stop'):
+                        label,tag='🔴 Échec distant','live_failed'
+                    elif state in ACTIVE or state=='preparing' or (state=='unconfirmed' and process):
+                        label,tag='🟡 '+('Compilation' if state in ('building','build','preparing','unconfirmed') else 'En cours'),'live_active'
+                    elif state=='incomplete':
+                        label,tag='⚠ Résultats incomplets','live_pending'
+                    else:
+                        label,tag='⚠ État à vérifier','live_pending'
+                elif process:
+                    label,tag='🟡 Processus distant actif','live_active'
+                elif self.busy and getattr(self.studio,'simple_tests',None) is not None and self.studio.simple_tests.launch_number==n:
+                    label,tag='🟡 Préparation Studio','live_active'
+                elif local and local.get('state')=='failed_local':
+                    label,tag='🔴 Échec local','live_failed'
+                elif local and local.get('state')=='started_local':
+                    label,tag='⚠ Aucun processus confirmé','live_pending'
+                else:
+                    label,tag='— Aucun lancement distant',''
+            if row and row.get('rows') and tag in ('live_ok','live_active'):
+                label+=f" · {row['rows']} mesures"
+            self.tree.set(iid,'status',label)
+            self.tree.item(iid,tags=(tag,) if tag else ())
+        self._highlight_selection()
+
+    def _highlight_selection(self):
+        # Stock Treeview's blue selection would hide the yellow/green row tint.
+        tags=[str(t) for iid in self.tree.selection() if self.tree.exists(iid)
+              for t in self.tree.item(iid,'tags')]
+        if 'live_failed' in tags:bg,fg='#F3B1B1','#781212'
+        elif 'live_active' in tags:bg,fg='#FFE082','#563D00'
+        elif 'live_ok' in tags:bg,fg='#B4E8C7','#0F5030'
+        elif 'live_pending' in tags:bg,fg='#FBE7B2','#674A00'
+        else:bg,fg='#3470A4','#FFFFFF'
+        self.live_style.map('RVVLiveRunner.Treeview',background=[('selected',bg)],foreground=[('selected',fg)])
+        selection=[self.item_by_tree[i] for i in self.tree.selection() if i in self.item_by_tree]
+        from rvvlab_simple_tests import TEST_IDS
+        managed_ids=set(TEST_IDS.values())
+        selected_active=any(x['id'] in managed_ids and 'live_active' in self.tree.item(i,'tags')
+                            for i,x in self.item_by_tree.items() if i in self.tree.selection())
+        self.single.configure(state='disabled' if self.busy or selected_active else 'normal')
+
     def _minute(self):
+        # ONE 60-second scheduler for both Test Runner and Tests simples.
+        # No separate 45-second polling. All reads are read-only.
         self.refresh_local()
-        self.refresh_remote()
+        if hasattr(self.studio,'simple_tests') and self.studio.ssh.connected():
+            # Main workspace first, history inventory after it finishes. Prevent
+            # two simultaneous SSH sweeps from fighting over the connection.
+            self.studio.simple_tests.refresh()
+        else:
+            self.refresh_remote()
         self.parent.after(60000,self._minute)
 
     def refresh_remote(self):
@@ -493,8 +586,9 @@ class TestRunnerPanel:
             if not self.studio.ssh.connected():self.remote_status.set('SSH disconnected; local monitoring only.')
             return
         run_id=self.run_id.get().strip()
+        if not run_id:return
         if not RUN_RE.fullmatch(run_id):
-            self.remote_status.set('Invalid run ID');return
+            self.remote_status.set('Invalid NightRuns ID');return
         self.poll_busy=True
         def worker():
             try:
@@ -514,6 +608,12 @@ class TestRunnerPanel:
         if self.studio.job_busy or self.studio.night_busy or self.studio.storage_busy:
             messagebox.showwarning('Studio is busy','Wait for the current operation to finish.');return False
         if not items:return False
+        from rvvlab_simple_tests import manifest_target
+        mismatch=[x['title'] for x in items if manifest_target(x['id']) is not None and
+                  self.studio.active_profile not in manifest_target(x['id'])[1]]
+        if mismatch:
+            messagebox.showerror('Mauvaise machine','Test(s) destinés à une autre machine : '+', '.join(mismatch))
+            return False
         desc='\n'.join(f'{i+1}. {display_test_title(x)} — {x["script_path"].name} [{x["script_sha"][:12]}]' for i,x in enumerate(items))
         return messagebox.askyesno('Run trusted scripts',
             'These local Python scripts run under your Studio account with SSH access.\n'
@@ -521,11 +621,8 @@ class TestRunnerPanel:
             'Tests run one at a time. No other test starts automatically.\n\n'+desc)
 
     def set_machine_mode(self,profile):
-        """Keep Test94 controls visible; show EPCC Slurm options only on EPCC."""
-        if profile=='EPCC':
-            if not self.epcc_settings.winfo_manager():self.epcc_settings.pack(fill='x',before=self.start94.master,pady=(0,3))
-        else:
-            self.epcc_settings.pack_forget()
+        """No special Test94 controls: profile handled by the manifest runner."""
+        if profile!='EPCC':self.epcc_nodes={}
 
     def detect_epcc_nodes(self):
         if self.studio.active_profile!='EPCC':
@@ -549,7 +646,7 @@ class TestRunnerPanel:
 
     def run_test94(self):
         if hasattr(self.studio,'test_center'):
-            self.studio.notebook.select(self.studio.center_tab)
+            self.studio.open_advanced(self.studio.center_tab)
             return self.studio.test_center.request_launch94()
         return self._run_test94_after_remote_check()
 
@@ -562,7 +659,7 @@ class TestRunnerPanel:
             messagebox.showerror('Test 94','Test94 manifest not installed in Test Runner folder.');return
         if self.studio.active_profile=='EPCC' and not self.epcc_nodes:
             self.detect_epcc_nodes()
-            messagebox.showinfo('EPCC nodes','Studio is checking Slurm nodes. rvc02 will be selected automatically if available. Click Run again when detection finishes.')
+            messagebox.showinfo('EPCC nodes','Vérification Slurm en cours. Le nœud RVV disponible sera choisi automatiquement. Relancez la sélection une fois la détection terminée.')
             return
         if self._approval([item]):self._run([item])
 
@@ -606,7 +703,7 @@ class TestRunnerPanel:
                 match=(file,doc)
         if match is None:
             messagebox.showinfo('Recover Test94','No saved launch or server-confirmed Test94 packet. Check the server in Centre des tests first.');return
-        self.busy=True;self.single.configure(state='disabled');self.all.configure(state='disabled');self.start94.configure(state='disabled')
+        self.busy=True;self.single.configure(state='disabled');self.all.configure(state='disabled')
         self.status.set('Recover Test94: checking remote status and results...')
         def work():
             try:
@@ -650,14 +747,27 @@ class TestRunnerPanel:
         selection=[i for i in selection if i['enabled']]
         if not selection:
             messagebox.showinfo('Selection','Select an enabled test in the table.');return
-        if any(x['id']=='machine-compare-94-1h' for x in selection):
+        # Tests 94–97 ALWAYS pass through the same remote anti-duplicate preflight
+        # as Tests simples. This prevents Run selected from bypassing safety.
+        from rvvlab_simple_tests import manifest_target
+        managed=[x for x in selection if manifest_target(x['id']) is not None]
+        if managed:
             if len(selection)!=1:
-                messagebox.showwarning('Test94','Sélectionnez Test 94 seul pour vérifier le serveur avant le lancement.');return
-            if hasattr(self.studio,'test_center'):
-                self.studio.notebook.select(self.studio.center_tab)
-                self.studio.test_center.tree.selection_set('machine-compare-94-1h')
-                self.studio.test_center.run()
-                return
+                messagebox.showwarning('Tests isolés',
+                    'Lancez les Tests 94/95/96/97 un par un. Une file multiple est interdite.');return
+            number,allowed=manifest_target(managed[0]['id'])
+            if self.studio.active_profile not in allowed:
+                messagebox.showerror('Mauvaise machine',
+                    'Le Test '+number+' ne correspond pas à '+self.studio.active_profile+'.');return
+            simple=getattr(self.studio,'simple_tests',None)
+            if simple is None:
+                messagebox.showerror('Tests simples',
+                    'Le contrôle anti-doublon distant est indisponible. Lancement refusé.');return
+            if simple.profile != self.studio.active_profile:simple.profile_changed()
+            simple.tree.selection_set(number)
+            simple._selected()
+            simple.run()  # read-only server preflight BEFORE local launch
+            return
         if self._approval(selection):self._run(selection)
 
     def run_queue(self):
@@ -674,7 +784,6 @@ class TestRunnerPanel:
         except ValueError as exc:
             messagebox.showwarning('Test94 settings',str(exc));return
         self.busy=True;self.stop_event.clear()
-        self.start94.configure(state='disabled')
         self.single.configure(state='disabled');self.all.configure(state='disabled')
         self.status.set(f'Manual execution: {len(items)} scripts, sequentially')
         def work():
@@ -691,6 +800,15 @@ class TestRunnerPanel:
                     self._write_history()
                     self.events.put(('line','PASS '+item['id']+' => '+result['folder']))
                 except Exception as ex:
+                    # A failure before the remote run folder exists must be recoverable
+                    # from the Tests simples status screen, without SSH Console.
+                    try:
+                        faildir=results_root/'TestRunner'/item['id']
+                        faildir.mkdir(parents=True,exist_ok=True)
+                        (faildir/'last_failure.json').write_text(json.dumps({
+                            'state':'failed','utc':now_utc(),'error':repr(ex)},
+                            ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+                    except OSError:pass
                     self.events.put(('line','FAIL '+item['id']+': '+repr(ex)))
                     # Strict fail-stop: never start next test after failed one.
                     break
@@ -716,17 +834,17 @@ class TestRunnerPanel:
                 elif kind=='remote':self.remote_status.set(data);self.poll_busy=False
                 elif kind=='nodes94':
                     self.epcc_nodes=data
-                    self.node_combo['values']=sorted(data)
-                    available=[n for n in sorted(data) if not data[n]['state'].lower().startswith(('down','drain','fail','maint','unk'))]
+                    available=[n for n in sorted(data) if not data[n]['state'].lower().startswith(('down','drain','fail','maint','unk'))
+                               and (n.startswith('rvc') or 'riscv' in data[n]['features'].lower())]
                     if self.epcc_node.get() not in available:self.epcc_node.set('rvc02' if 'rvc02' in available else (available[0] if available else ''))
                     desc='; '.join(f'{k}: {v["partition"]}, {v["state"]}, {v["features"]}' for k,v in sorted(data.items()))
-                    self.epcc_node_status.set(f'{len(data)} Slurm node(s) discovered. Choose a verified RVV 1.0 node.')
+                    self.epcc_node_status.set(f'{len(data)} Slurm node(s) discovered (using {self.epcc_node.get() or "none"}).')
                     self._log('EPCC Slurm nodes: '+desc)
                 elif kind=='nodes94_fail':
                     self.epcc_node_status.set('EPCC node discovery failed: '+data)
                     self._log('EPCC node discovery ERROR: '+data)
                 elif kind=='done':
-                    self.busy=False;self.single.configure(state='normal');self.all.configure(state='normal');self.start94.configure(state='normal')
+                    self.busy=False;self.single.configure(state='normal');self.all.configure(state='normal')
                     self.status.set(data)
                     self.refresh_local()
                     if hasattr(self.studio,'test_center'):self.studio.test_center.refresh_local()

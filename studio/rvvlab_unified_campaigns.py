@@ -19,6 +19,7 @@ import tkinter as tk
 from rvvlab_backend import validate_remote_name
 from rvvlab_local_time import remote_utc_as_local
 from rvvlab_night import remote_runs, stop as request_stop, sync as sync_results
+from rvvlab_epcc_results import discover_epcc_runs, sync_epcc_run
 
 TERMINAL = frozenset({'stopped', 'failed', 'completed', 'complete', 'finished',
                        'done', 'safety_stop', 'timeout', 'cancelled'})
@@ -26,6 +27,11 @@ TERMINAL = frozenset({'stopped', 'failed', 'completed', 'complete', 'finished',
 
 def readable_test(row):
     """Identify Studio/CLI campaigns without guessing from timestamped run IDs."""
+    if row.get('kind')=='test94':return 'Test 94 — EPCC (1h)'
+    if row.get('kind')=='test96':return 'Test 96 — EPCC (8h)'
+    if row.get('kind')=='test95':return 'Test 95 — Cloud-V (8h)'
+    if row.get('kind')=='test97':return ('Test 97 — EPCC officiel v5 (3h)' if row.get('test_id')=='test97-epcc-v5-3h' else 'Test 97 — Cloud-V (8h)')
+    if row.get('kind')=='test94-cloudv':return 'Test 94 — Cloud-V (1h)'
     name=str(row.get('campaign') or '').lower().replace('_','').replace('-','')
     duration=row.get('budget_seconds')
     if 'test93' in name or 'stage1overheadisolation93' in name:
@@ -60,7 +66,7 @@ def campaign_start(row):
         if instant is not None:return instant,False
     # Historical night campaign identifiers encode UTC creation, not necessarily
     # the exact worker start. Mark this estimate explicitly with ≈.
-    match=re.fullmatch(r'night-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
+    match=re.fullmatch(r'(?:night|test94|test95|test96|test97)-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
     if match:
         try:
             stamp=datetime.strptime(match.group(1),'%Y%m%dT%H%M%S').replace(tzinfo=timezone.utc)
@@ -88,15 +94,19 @@ def campaign_elapsed(row,now=None):
 
 def campaign_state(row):
     state=str(row.get('state') or '').lower()
-    if state in ('completed','complete','finished','done','stopped'):return 'Finished'
-    if state=='failed':return 'Failed'
+    if state in ('completed','complete','finished','done','stopped'):return '🟢 Terminé' if row.get('validated') and row.get('packet') else 'Finished'
+    if state in ('building','build','preparing','running','exploring','train','holdout'):return '🟡 '+('Compilation' if state in ('building','build','preparing') else 'En cours')
+    if state in ('failed','safety_stop'):return '🔴 Échec'
+    if state=='unknown':return 'À vérifier'
+    if state=='building':return 'Compilation'
+    if state in ('queued','pending'):return 'En attente'
     if state in TERMINAL:return state.replace('_',' ').title()
     if state in ('starting','launch_incomplete','preflight'):return 'Starting'
     return 'Running' if state else 'Unknown'
 
 
 def campaign_phase(row):
-    phase=str(row.get('experiment_phase') or '').strip()
+    phase=str(row.get('experiment_phase') or row.get('phase') or '').strip()
     if phase:return phase
     state=str(row.get('state') or '').strip()
     return state if state.lower() not in TERMINAL else '—'
@@ -120,7 +130,8 @@ def campaign_details(row):
        'Current variant: '+str(row.get('current_candidate') or '—'),
        'Current corpus: '+str(row.get('current_corpus') or '—'),
        'Free disk (GiB): '+str(row.get('disk_free_gib') if row.get('disk_free_gib') is not None else '—'),
-       'Stop reason: '+str(row.get('stop_reason') or '—'),
+       'Stop reason: '+str(row.get('stop_reason') or row.get('reason') or '—'),
+       'EPCC result ZIP: '+('available (SHA256 verification on download)' if row.get('packet') else 'not available') if row.get('kind') else '',
        '≈ means estimated from campaign ID (exact started_utc unavailable).' if estimated else '',
     )).rstrip()
 
@@ -145,6 +156,8 @@ class UnifiedCampaigns:
         self.poll_busy = False
         self.rows = []
         self.by_id = {}
+        self.history_rows=[]
+        self.verified_by_profile={}
         self.status = tk.StringVar(value='Connect SSH, then refresh campaigns.')
         self._build()
         # The original single-campaign default was a stopped 250-row review.
@@ -178,6 +191,8 @@ class UnifiedCampaigns:
         treebox=ttk.Frame(self.frame);treebox.pack(fill='x')
         self.tree=ttk.Treeview(treebox,columns=cols,show='headings',height=5,
                                selectmode='browse')
+        self.live_style=ttk.Style()
+        self.tree.configure(style='RVVLiveCampaigns.Treeview')
         for col,label,width in (
             ('test','Test / profile',225), ('state','State',85),
             ('started','Start time (PC)',218), ('elapsed','Elapsed',94),
@@ -191,6 +206,9 @@ class UnifiedCampaigns:
         self.tree.configure(yscrollcommand=vbar.set,xscrollcommand=hbar.set)
         vbar.pack(side='right',fill='y');self.tree.pack(side='left',fill='both',expand=True)
         hbar.pack(fill='x')
+        self.tree.tag_configure('live_active',background='#FFF0B3',foreground='#785000')
+        self.tree.tag_configure('live_ok',background='#DAF5E3',foreground='#115C3D')
+        self.tree.tag_configure('live_failed',background='#FDE2E2',foreground='#9B1C1C')
         self.tree.bind('<<TreeviewSelect>>',self._on_selection)
         self.runner.tree.configure(height=5)
         self.runner.log.configure(height=7)
@@ -205,8 +223,11 @@ class UnifiedCampaigns:
         state=self._selected_state()
         ready=connected and not self.busy
         self.refresh_btn.configure(state='normal' if ready and not self.poll_busy else 'disabled')
-        self.sync_btn.configure(state='normal' if ready and state else 'disabled')
-        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL else 'disabled')
+        selected=self.by_id.get(self._selected_id(),{})
+        modern=selected.get('kind') in ('test94','test94-cloudv','test95','test96','test97')
+        downloadable=selected.get('state')=='completed' and selected.get('validated') and selected.get('packet')
+        self.sync_btn.configure(state='normal' if ready and state and (not modern or downloadable) else 'disabled')
+        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL and selected.get('kind') not in ('test94','test96','test94-cloudv','test95','test97') else 'disabled')
 
     def _selected_id(self):
         values=self.tree.selection()
@@ -225,14 +246,24 @@ class UnifiedCampaigns:
     def _on_selection(self,_event=None):
         runid=self._selected_id()
         if runid:
-            self.runner.run_id.set(runid)
             row=self.by_id.get(runid,{})
+            self.runner.run_id.set(runid if not row.get('kind') else '')
             self.runner.remote_status.set(
                 f"{readable_test(row)} · {campaign_state(row)} · {campaign_elapsed(row)} · "
                 f"{row.get('observations',0)} observations · {runid} · "
                 f"variant {row.get('current_candidate') or '—'} · "
                 f"disk {row.get('disk_free_gib') if row.get('disk_free_gib') is not None else '—'} GiB")
         self._buttons()
+        self._highlight_selection()
+
+    def _highlight_selection(self):
+        tags=[str(tag) for iid in self.tree.selection() if self.tree.exists(iid)
+              for tag in self.tree.item(iid,'tags')]
+        if 'live_failed' in tags:bg,fg='#F3B1B1','#781212'
+        elif 'live_active' in tags:bg,fg='#FFE082','#563D00'
+        elif 'live_ok' in tags:bg,fg='#B4E8C7','#0F5030'
+        else:bg,fg='#3470A4','#FFFFFF'
+        self.live_style.map('RVVLiveCampaigns.Treeview',background=[('selected',bg)],foreground=[('selected',fg)])
 
     def refresh_remote(self):
         """Called by the existing TestRunnerPanel minute timer, never launches a job."""
@@ -248,12 +279,50 @@ class UnifiedCampaigns:
         def work():
             try:
                 rows=remote_runs(self.studio.ssh,self._remote_name())
-                self.events.put(('rows',rows))
+                if self.studio.active_profile=='EPCC':
+                    rows+=discover_epcc_runs(self.studio.ssh,self._remote_name())
+                self.events.put(('rows',sorted(rows,key=lambda x:x.get('id',''),reverse=True)))
             except Exception as e:
                 self.events.put(('error','Error reading campaigns: '+str(e)))
         threading.Thread(target=work,daemon=True).start()
 
+    def clear_verified_campaigns(self):
+        self.verified_by_profile={}
+        self._set_rows(self.history_rows)
+
+    def apply_verified_campaigns(self,profile,data,processes):
+        '''Display the same 94/95/96/97 status already read for Tests simples.'''
+        if self.studio.active_profile!=profile:return
+        entries=[]
+        for number,items in (data or {}).items():
+            for item in items:
+                kind='test94-cloudv' if number=='94' and profile=='Cloud-V' else 'test'+number
+                entries.append({
+                    'id':item['id'],'kind':kind,'campaign':'test'+number,
+                    'state':item['state'],'observations':item.get('rows',0),
+                    'packet':item.get('packet',False),'validated':item.get('validated',False),
+                    'source_path':item.get('path',''),
+                    'test_id':{'94':'machine-compare-94-1h','95':'test95-cloudv-8h',
+                               '96':'test96-epcc-8h','97':('test97-epcc-v5-3h' if profile=='EPCC' else 'test97-cloudv-8h')}[number],
+                    'started_utc':None,'phase':item['state'],
+                })
+        # A process may be visible before the test97-runs directory exists.
+        if profile=='Cloud-V' and processes and not (data or {}).get('97'):
+            entries.append({'id':'test97-process-confirmed','kind':'test97',
+                            'campaign':'test97','state':'building',
+                            'observations':0,'validated':False,'packet':False,
+                            'phase':'processus actif','test_id':'test97-cloudv-8h'})
+        self.verified_by_profile[profile]=entries
+        self._set_rows(self.history_rows)
+
     def _set_rows(self,rows):
+        # Historical NightRuns and current modern tests in ONE campaign view.
+        profile=self.studio.active_profile
+        known={r.get('id'):r for r in rows if r.get('id')}
+        # Prefer verified SimpleTests state to a stale NightRuns/EPCC discovery row.
+        for item in self.verified_by_profile.get(profile,[]):
+            known[item['id']]=item
+        rows=sorted(known.values(),key=lambda r:str(r.get('id') or ''),reverse=True)
         self.rows=rows
         self.by_id={r['id']:r for r in rows if r.get('id')}
         previous=self._selected_id() or self.runner.run_id.get().strip()
@@ -263,7 +332,12 @@ class UnifiedCampaigns:
         for row,vals in zip(rows,rows_formatted):
             runid=str(row.get('id') or '')
             if not runid:continue
-            iid=self.tree.insert('','end',iid=runid,values=vals)
+            current=str(row.get('state','')).lower()
+            if row.get('validated') and row.get('packet') and current=='completed':tag='live_ok'
+            elif current in ('failed','safety_stop'):tag='live_failed'
+            elif current in ('building','build','preparing','running','train','holdout','queued','pending','exploring'):tag='live_active'
+            else:tag=''
+            iid=self.tree.insert('','end',iid=runid,values=vals,tags=(tag,) if tag else ())
             if runid==previous:selected=iid
         if selected is None and rows_formatted:
             # Prefer an active run over a completed/historical one on first open.
@@ -276,10 +350,11 @@ class UnifiedCampaigns:
             self.tree.see(selected)
             self._on_selection()
         else:
-            self.runner.remote_status.set('No campaigns in the remote folder.')
+            self.runner.remote_status.set('No NightRuns or EPCC Test94/Test96 campaigns found.')
         active=sum(1 for x in rows if x.get('state') not in TERMINAL)
         self.status.set(f'{len(rows)} campaigns · {active} still active')
         self._buttons()
+        self._highlight_selection()
 
     def _action(self,action):
         if self.busy or self.poll_busy:return
@@ -289,12 +364,34 @@ class UnifiedCampaigns:
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connecte Studio avant toute action.');return
         if action=='stop':
+            if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
+                messagebox.showinfo('Slurm', 'Aucun arrêt EPCC automatique : utilisez les outils Slurm après vérification manuelle.');return
             if self._selected_state() in TERMINAL:
                 messagebox.showinfo('Campaign','This campaign has already finished.');return
             if not messagebox.askyesno('Confirm graceful stop',
                 f'Request a graceful stop for:\n\n{runid}\n\n'
                 'The worker will stop at its next checkpoint. No files will be deleted.'):
                 return
+        chosen=self.by_id.get(runid,{})
+        if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
+            if chosen.get('state')!='completed' or not chosen.get('validated') or not chosen.get('packet'):
+                messagebox.showinfo('Résultat indisponible','La campagne doit être terminée et validée pour être téléchargée.')
+                return
+            simple=getattr(self.studio,'simple_tests',None)
+            if simple is None:
+                messagebox.showerror('Tests simples','Utilisez Tests simples pour récupérer cette campagne.')
+                return
+            number=re.search(r'test(\d+)',str(chosen['kind'])).group(1)
+            if simple.profile!=self.studio.active_profile:simple.profile_changed()
+            if not simple.remote_checked or not any(x.get('id')==runid for x in simple.runs.get(number,[])):
+                simple.refresh()
+                messagebox.showinfo('Vérification','Vérification serveur lancée. Réessayez Sync results dans quelques secondes.')
+                return
+            simple.tree.selection_set(number)
+            simple.selection.set(runid)
+            simple._selected()
+            simple.download()
+            return
         self.busy=True
         self.status.set('Stopping...' if action=='stop' else 'Downloading...')
         self._buttons()
@@ -312,7 +409,12 @@ class UnifiedCampaigns:
                         self.events.put(('info',f'Graceful stop requested: {runid}'))
                 else:
                     root=Path(self.studio.vars['results'].get()).expanduser()
-                    path=sync_results(self.studio.ssh,remote,runid,root)
+                    entry=self.by_id.get(runid,{})
+                    if entry.get('kind') in ('test94','test96','test97') and self.studio.active_profile=='EPCC':
+                        if not entry.get('packet'):
+                            raise RuntimeError('Aucune archive ZIP distante confirmée pour ce test (consulter les journaux).')
+                        path=sync_epcc_run(self.studio.ssh,remote,runid,root)
+                    else:path=sync_results(self.studio.ssh,remote,runid,root)
                     self.events.put(('info','SHA256-verified results synced: '+str(path)))
             except Exception as e:
                 self.events.put(('error',f'{action} {runid}: {e}'))
@@ -328,7 +430,15 @@ class UnifiedCampaigns:
     def stop_selected(self):self._action('stop')
 
     def open_results(self):
-        p=Path(self.studio.vars['results'].get()).expanduser()/'NightRuns'
+        run=self.by_id.get(self._selected_id(),{})
+        if run.get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
+            n={'test94':'94','test94-cloudv':'94','test95':'95','test96':'96','test97':'97'}[run['kind']]
+            simple=getattr(self.studio,'simple_tests',None)
+            p=(simple._packet_dir(n,run['id']) if simple else
+               Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/run['test_id'])
+            if not p.exists():
+                messagebox.showinfo('Results','Ce résultat EPCC n’a pas encore été téléchargé.');return
+        else:p=Path(self.studio.vars['results'].get()).expanduser()/'NightRuns'
         p.mkdir(parents=True,exist_ok=True)
         import os
         if hasattr(os,'startfile'):os.startfile(str(p))
@@ -341,6 +451,7 @@ class UnifiedCampaigns:
                 except queue.Empty:break
                 if kind=='rows':
                     self.poll_busy=False
+                    self.history_rows=data
                     self._set_rows(data)
                 elif kind=='error':
                     self.poll_busy=False
