@@ -31,7 +31,8 @@ class WorkspaceRefonteTests(unittest.TestCase):
         self.panel._selected()
 
     def test_two_spaces_and_historical_navigation(self):
-        self.assertEqual(len(self.app.notebook.tabs()),2)
+        self.assertEqual(len(self.app.notebook.tabs()),3)
+        self.assertIn('Corpus JSON', self.app.notebook.tab(self.app.corpus_tab,'text'))
         self.assertEqual(len(self.app.advanced_notebook.tabs()),8)
         self.app.open_advanced(self.app.test_runner_tab)
         self.assertEqual(self.app.advanced_notebook.select(),str(self.app.test_runner_tab))

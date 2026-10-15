@@ -194,6 +194,8 @@ class Studio:
         self.notebook=notebook
         self.simple_tests_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,15))
         notebook.add(self.simple_tests_tab,text='   Tests   ')
+        self.corpus_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,12))
+        notebook.add(self.corpus_tab,text='   Corpus JSON   ')
         self.advanced_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,12))
         notebook.add(self.advanced_tab,text='   Outils avancés   ')
 
@@ -239,6 +241,8 @@ class Studio:
         self.test_runner=TestRunnerPanel(self.test_runner_tab,self)
         self.test_center=TestCenterPanel(self.center_tab,self)
         self.simple_tests=SimpleTestsPanel(self.simple_tests_tab,self)
+        from rvvlab_corpus_panel import CorpusLibraryPanel
+        self.corpus_library=CorpusLibraryPanel(self.corpus_tab,self)
         self.unified_campaigns=UnifiedCampaigns(self.test_runner,self)
         self.test_runner.refresh_remote=self.unified_campaigns.refresh_remote
         # The Test Runner 60-second scheduler remains the only campaign refresh.
@@ -254,7 +258,7 @@ class Studio:
         if (self.night_busy or self.storage_busy or self.job_busy or
             self._test94_poll_busy or self.unified_campaigns.busy or
             self.test_runner.busy or self.test_center.busy or
-            self.simple_tests.busy or self.simple_tests.poll_busy):
+            self.simple_tests.busy or self.simple_tests.poll_busy or self.corpus_library.busy):
             if attempt<5:self.root.after(4000,lambda:self._center_auto_check(attempt+1))
             return
         self.test_center.check_remote()
@@ -901,6 +905,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         self.test_center.remote.clear();self.test_center.remote94=None;self.test_center.server_checked=False
         self.test_center.refresh_local()
         self.simple_tests.profile_changed()
+        self.corpus_library.profile_changed()
         self.night_rows=[]
         self.status.set(f'{target} selected — click SSH Connect. Detached remote tests continue running.')
         self._save_settings()
@@ -1045,7 +1050,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         finally:self.events.put(('console_done',None))
 
     def disconnect(self):
-        if self.job_busy or self.storage_busy or self.night_busy:
+        if self.job_busy or self.storage_busy or self.night_busy or self.corpus_library.busy:
             messagebox.showwarning('Activity in progress','Wait for tests or sync to finish before disconnecting.')
             return
         self.console_stop.set()
@@ -1328,7 +1333,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
             self.root.after(75,self._poll)
 
     def _quit(self):
-        if self.storage_busy or self.night_busy:
+        if self.storage_busy or self.night_busy or self.corpus_library.busy:
             messagebox.showwarning('Active synchronization',
                 'Wait for sync or purge to finish before exiting.');return
         if self.job_busy and not messagebox.askyesno('Exit','A campaign is active. Closing Studio may leave a process running on RVV Lab. Exit?'):

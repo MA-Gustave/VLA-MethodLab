@@ -76,42 +76,18 @@ def inspect_or_recover(ctx,profile):
     return {'state':state.get('state','unknown'),'run_id':run['id'],'rows':state.get('rows',0),'packet':None}
 
 def local_corpus(ctx,engine):
-    manager=(engine/'tools/corpus98.py')
-    if not manager.is_file():
-        manager=Path(__file__).resolve().parents[2]/'tools/corpus98.py'
-    if not manager.is_file():raise RuntimeError('Test98 corpus manager missing. Install VectorPath or complete Lab patch.')
-    cache=engine/'.cache/test98-corpus'
-    ctx.log('Preparing pinned public corpus locally (one-time HTTPS download, cached across runs).')
-    p=subprocess.run([sys.executable,str(manager),'prepare','--cache',str(cache)],
-                     text=True,capture_output=True,timeout=1000)
-    if p.returncode:raise RuntimeError('Local corpus fetch failed (no synthetic fallback): '+p.stderr[-1700:])
-    rec=json.loads(p.stdout.strip().splitlines()[-1]);corpus=Path(rec['archive'])
-    if not corpus.is_file():raise RuntimeError('Corpus preparation did not create archive')
-    # Revalidate independently before every deployment.
-    spec=importlib.util.spec_from_file_location('corpus98_verified',manager)
-    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
-    m.verify(corpus)
-    ctx.log('Corpus: '+str(rec['files'])+' public documents, ZIP SHA256 '+rec['sha256'])
-    return manager,corpus,rec['sha256'],m.CORPUS_ID
+    """Test98 uses the SAME pinned archive that every other Lab test can use."""
+    from rvvlab_corpus_service import LAB, MANAGER, catalog, prepare_local
+    info=prepare_local(LAB,ctx.log)
+    ctx.log('Shared MethodLab corpus: '+str(info['count'])+' JSON; SHA256 '+info['digest'])
+    return MANAGER,Path(info['archive']),info['digest'],catalog()['id']
 
 def deploy_corpus(ctx,manager,corpus,digest,identifier):
-    h=load_helper('96_epcc_8h.py')
-    base=ctx.ssh.base(ctx.remote_name)
-    root=base+'/corpora/test98';folder=root+'/'+digest[:20]
-    ctx.ssh.mkdir(base+'/corpora');ctx.ssh.mkdir(root);ctx.ssh.mkdir(folder)
-    remote_zip=folder+'/'+identifier+'.zip';remote_manager=folder+'/corpus98.py'
-    ctx.log('Checking reusable corpus cache on '+str(ctx.studio.active_profile)+' (no second download).')
-    existing=ctx.ssh.exec_text('if test -f '+q(remote_zip)+'; then sha256sum '+q(remote_zip)+'; fi').strip()
-    if not existing.startswith(digest+' '):
-        h.upload(ctx,corpus,remote_zip+'.part')
-        ctx.ssh.exec_text('mv -f '+q(remote_zip+'.part')+' '+q(remote_zip))
-    h.upload(ctx,manager,remote_manager)
-    installed=folder+'/data/'+identifier
-    # Extraction is content-checked; the exact same files are reused on future runs.
-    output=ctx.ssh.exec_text('python3 '+q(remote_manager)+' extract '+q(remote_zip)+' '+q(folder+'/data')).strip()
-    if output.splitlines()[-1]!=installed:raise RuntimeError('Remote corpus extractor returned unexpected path: '+output[-250:])
-    ctx.log('Corpus verified on remote: '+installed)
-    return installed
+    from rvvlab_corpus_service import LAB,sync_remote
+    info=sync_remote(ctx.ssh,ctx.remote_name,LAB,ctx.log)
+    if info['digest']!=digest or info['data'].split('/')[-1]!=identifier:
+        raise RuntimeError('Shared corpus ID/hash mismatch. Test98 not launched.')
+    return info['data']
 
 def execute(ctx,params):
     ctx.ensure_connected()
@@ -165,7 +141,7 @@ def execute(ctx,params):
         if not tool.is_file():raise RuntimeError('Missing Test98 tool '+name)
         h.upload(ctx,tool,folder+'/tools/'+name)
     info={'schema':1,'run_id':rid,'mode':profile,'source':source_remote,'workdir':folder,
-          'corpus':corpus_remote,'corpus_zip_sha256':digest,'started_utc':dt.datetime.now(dt.timezone.utc).isoformat()}
+          'corpus':corpus_remote,'corpus_id':identifier,'corpus_zip_sha256':digest,'started_utc':dt.datetime.now(dt.timezone.utc).isoformat()}
     (ctx.output_dir/'launch98.json').write_text(json.dumps(info,indent=2)+'\n',encoding='utf8')
     if profile=='EPCC':
         lookup=load_helper('97_epcc_v5_compare.py')

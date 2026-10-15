@@ -87,8 +87,10 @@ def discover(folder: Path):
                 raise ValueError('enabled must be boolean')
             manual_only=doc.get('manual_only',False)
             if not isinstance(manual_only,bool):raise ValueError('manual_only must be boolean')
+            requires_shared=doc.get('requires_shared_corpus',False)
+            if not isinstance(requires_shared,bool):raise ValueError('requires_shared_corpus must be boolean')
             found.append({'id': name, 'title': title, 'enabled': enabled, 'manual_only':manual_only,
-                          'params': params, 'manifest_path': manifest_path,
+                          'params': params, 'requires_shared_corpus':requires_shared, 'manifest_path': manifest_path,
                           'script_path': script_path, 'manifest_sha': sha256(manifest_path),
                           'script_sha': sha256(script_path),
                           'description': str(doc.get('description', ''))[:600]})
@@ -197,6 +199,12 @@ class TestContext:
         if not self.ssh.connected():raise RuntimeError('SSH disconnected')
         if self.remote_name != 'rvvlab-v5':
             raise RuntimeError('Refused: runner only permitted in rvvlab-v5')
+
+    def shared_json_corpus(self):
+        """Find verified shared JSON data on current target, without modifying protocols."""
+        self.ensure_connected()
+        from rvvlab_corpus_service import require_remote
+        return require_remote(self.ssh,self.remote_name)
 
     def sync_stopped_night(self,run_id):
         if not RUN_RE.fullmatch(str(run_id)):
@@ -316,6 +324,13 @@ def run_trial(item,studio,result_root,emit,stop_event):
     ctx=TestContext(studio,out,logger,stop_event,item)
     ctx.ensure_connected()
     logger(f'START {item["id"]} script SHA256 {item["script_sha"]}')
+    if item.get('requires_shared_corpus'):
+        # Optional, fail-closed preflight for ANY future trusted test manifest.
+        # Never change 81-97's fixed historical corpora implicitly.
+        corpus=ctx.shared_json_corpus()
+        (out/'shared_corpus_used.json').write_text(
+            json.dumps(corpus,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+        logger('SHARED_CORPUS_VERIFIED '+corpus['corpus_id']+' '+corpus['archive_sha256'])
     spec=importlib.util.spec_from_file_location('rvvlab_trial_'+re.sub(r'\W','_',item['id']),script_path)
     if spec is None or spec.loader is None:raise RuntimeError('Could not load script')
     mod=importlib.util.module_from_spec(spec)
@@ -605,7 +620,8 @@ class TestRunnerPanel:
         if self.busy:return False
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH Connect','Connect Studio to the server before starting.');return False
-        if self.studio.job_busy or self.studio.night_busy or self.studio.storage_busy:
+        if (self.studio.job_busy or self.studio.night_busy or self.studio.storage_busy or
+            getattr(getattr(self.studio,'corpus_library',None),'busy',False)):
             messagebox.showwarning('Studio is busy','Wait for the current operation to finish.');return False
         if not items:return False
         from rvvlab_simple_tests import manifest_target

@@ -542,7 +542,8 @@ class SimpleTestsPanel:
         if not number:return
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connectez la machine sélectionnée avant Run.');return
-        if (self.busy or self.poll_busy or self.studio.test_runner.busy):
+        if (self.busy or self.poll_busy or self.studio.test_runner.busy or
+            getattr(getattr(self.studio,'corpus_library',None),'busy',False)):
             self.notice.set('Une opération de lancement ou de vérification est en cours. Run refusé pour éviter un doublon.')
             return
         self.busy=True;self._selected()
