@@ -1,0 +1,5 @@
+VLA-MethodLab contains a copy of the simdjson-derived VectorPath engine in engine/. All original simdjson and third-party licences and source attributions remain in force. The original contributors, including Daniel Lemire, Geoff Langdale and John Keiser, are acknowledged solely for inherited material; no sponsorship or endorsement is implied.
+
+Embedded license texts: engine/LICENSE and engine/LICENSE-MIT; historical/third-party copies also appear under licenses/historical-simdjson/ and THIRD_PARTY_LICENSES/.
+
+Only independently owned, proven, copyrightable original additions can be given separate, prospective proprietary terms. All existing applicable permissions remain intact. No source additions are yet certified as newly reserved solely on the available snapshots; see LICENSE, LICENSE-SCOPE.md and PROVENANCE-ADDITIONS.md.

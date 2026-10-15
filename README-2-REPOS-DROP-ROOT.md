@@ -1,22 +1,10 @@
-# Deux ZIP, directement dans deux racines
+# Installation des deux dépôts — revue des licences requise
 
-1. Décompresser **VLA-MethodLab_DROP_ROOT_OVERWRITE.zip** à la racine du dépôt
-   `VLA-MethodLab` et répondre **Remplacer tout**.
-2. Décompresser **VectorPath-RVV_DROP_ROOT_OVERWRITE.zip** à la racine du dépôt
-   `VectorPath-RVV` et répondre **Remplacer tout**.
+1. Examiner et extraire l'archive `VLA-MethodLab_licences_renforcees_REVUE.zip` dans la racine `VLA-MethodLab`.
+2. Examiner et extraire `VectorPath-RVV_licences_renforcees_REVUE.zip` dans la racine `VectorPath-RVV`.
 
-Il n'y a **aucun sous-dossier wrapper**, aucune commande Git, aucun sous-module
-et aucun lien symbolique à préparer. Les ZIP ne contiennent **pas** `LICENSE`
-à leur racine : les licences GitHub préexistantes ne seront pas écrasées.
+**Ces archives incluent désormais chacune un fichier `LICENSE` de périmètre mixte.** Il ne remplace pas les permissions Apache/MIT historiques et n'annule pas les licences précédemment consenties. Les textes tiers de simdjson sont préservés dans `engine/LICENSE` / `engine/LICENSE-MIT` pour MethodLab et dans `THIRD_PARTY_LICENSES/` / `LICENSE-MIT` pour VectorPath.
 
-Le Lab contient temporairement son propre `engine/` pour rester fonctionnel
-dès la décompression ; VectorPath-RVV contient le moteur directement à sa
-racine. Ces deux versions du moteur sont alignées dans cette livraison.
-Lors de futures modifications, synchroniser les sources avant les benchmarks.
+Le répertoire `engine/` est **bien distribué et versionné** dans MethodLab. Ce moteur embarqué est techniquement identique aux chemins communs du moteur VectorPath dans les snapshots audités ; conserver cet alignement lors des essais.
 
-Les deux raccourcis de Studio (Cloud-V et EPCC) fonctionnent dans MethodLab.
-Les fichiers `.env` et les résultats privés restent hors de ces ZIP.
-
-**Rappel :** déposer les fichiers sur disque n'effectue pas un `git push` et ne
-publie rien sur GitHub. La licence choisie sur GitHub et les notices tierces
-Apache-2.0 / MIT doivent être vérifiées avant une publication publique.
+Aucun fichier ZIP ne publie quoi que ce soit sur GitHub : relire les modifications, consulter les preuves de provenance et obtenir une revue juridique avant fusion sur les branches publiques. Ne pas publier de `.env`, clés ou autres secrets.

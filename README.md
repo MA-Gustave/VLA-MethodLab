@@ -1,11 +1,13 @@
+> **RIGHTS NOTICE — INDEPENDENT LAB, MIXED ORIGIN, PROSPECTIVE UPSTREAM EXCLUSION**  
+> This repository **includes `engine/`**, a simdjson-derived engine under its applicable existing upstream and third-party licences. Neither the lab nor the engine is made wholly proprietary by this notice. For future or otherwise verified, independently controlled and individually registered original additions, **no licence is granted for incorporation into official simdjson without separate signed authorization**. Previous Apache/MIT and other grants cannot be revoked. See [LICENSE](LICENSE), [scope](LICENSE-SCOPE.md), [register](PROVENANCE-ADDITIONS.md), [upstream exclusion](UPSTREAM-EXCLUSION.md).
+
 # VLA-MethodLab — Studio, orchestration et expériences RVV
 
 Dépôt : https://github.com/MA-Gustave/VLA-MethodLab
 
 **Installation directe :** décompresser le ZIP **VLA-MethodLab_DROP_ROOT_OVERWRITE.zip**
 à la racine de `VLA-MethodLab`. Ne pas créer un dossier supplémentaire.
-La licence `LICENSE` déjà choisie sur GitHub est **préservée**, elle n'est pas
-incluse dans ce ZIP.
+Le fichier `LICENSE` **est inclus** dans cette distribution ; il présente les droits mixtes applicables. Les licences des composants hérités conservent leur portée et ne sont pas remplacées.
 
 Ce dossier est **autonome** et contient une **copie compatible** du moteur
 sous `engine/`, pour que Lab Studio fonctionne dès l'extraction.

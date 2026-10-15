@@ -1,26 +1,26 @@
-# VLA MethodLab — provenance register
+# VLA-MethodLab — original-additions provenance and title register
 
-**Snapshot basis:** Lab code archive provided 2026-10-14, without its Git history. Separately evaluated engine code is now maintained in `vectorpath-rvv`. Entries in this file do **not** certify exclusive rights.
+**Status: CANDIDATES ONLY; ZERO VERIFIED COVERED MATERIAL ENTRIES.**
 
-## Areas to review
+The provided snapshot lacks authentic earlier commit history, independently verified authorship/title, signed contributor rights and initial licensing decisions. The embedded `engine/` directory **is actually published** in the current ZIP and GitHub repository, so it is classified as inherited/mixed origin rather than absent. Historical reports and performance metrics do not alone confer copyright monopolies.
 
-| Area | Content | Rights status |
+## Candidate areas requiring investigation
+
+| Paths | Provenance finding | Rights status |
 | --- | --- | --- |
-| `orchestrator/` | Remote orchestration and source transfer | UNVERIFIED; prior licence/grants require review |
-| `studio/` | Desktop UI, profiles and reports | UNVERIFIED; prior licence/grants require review |
-| `experiments/` | E00–E14, workers, manifests and protocols | UNVERIFIED; prior licence/grants require review |
-| `tools/` | Lab utilities and validators | UNVERIFIED; prior licence/grants require review |
-| `docs/`, `results/` | Research documentation and historical evidence | UNVERIFIED; not presumed restrictive |
-| `engine/` | Locally installed separate source | Not stored in this repository; governed by VectorPath source-file licences |
+| `orchestrator/**` | SSH orchestration, remote execution, source transfer | UNVERIFIED — inspect prior licences, contributors, AI assistance and first release |
+| `studio/**` | Local interfaces and experiment orchestration | UNVERIFIED |
+| `experiments/**` | Pattern library, workers, protocols | UNVERIFIED; experiments and abstract ideas alone are not protected code |
+| `tools/**` | Test and integrity scripts | UNVERIFIED |
+| `docs/**`, `results/**` | Research prose, evidence, benchmark artifacts | MIXED; copyright to original prose potentially distinct from unprotectable data |
+| `engine/**` | Embedded VectorPath-compatible, simdjson-derived engine | INHERITED / MIXED ORIGIN; check VectorPath file/patch provenance and preserve third-party terms |
 
-## Register of confirmed additions
+**Confirmed rights-reserved entries: NONE.** Candidate SHA-256 digests appear in the audit manifest, but checksums do not prove title.
 
-**None yet registered.** This is intentional. The supplied ZIP files do not establish prior publication, copyright ownership or earlier licences per line.
+## Required verified record (blank)
 
-Record future eligible portions before distribution:
+| Exact file and line range/patch | SHA-256 and immutable commit | Rightsholder and human-authorship evidence | First publication and applicable earlier grants | Third-party rights verified | Explicit `LicenseRef-MA-Gustave-Restricted-2026` designation | Date and signed review |
+| --- | --- | --- | --- | --- | --- | --- |
+| _No verified entries_ | | | | | | |
 
-| Exact path + lines / patch | SHA-256 / Git commit | Rightsholder | Evidence of creation / publication | Previous grants checked | New licence terms |
-| --- | --- | --- | --- | --- | --- |
-| _No verified entries_ | | | | | |
-
-Keep original timestamps and preserved historical reports separate from newly generated repository Git dates.
+Future new eligible material should be marked and registered **before public distribution**. Never backdate restricted licensing to pre-existing public Apache/MIT material.

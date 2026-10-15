@@ -1,10 +1,18 @@
-# VLA MethodLab — licensing and scope notice
+# Mixed-origin copyright and licensing notice — VLA-MethodLab
 
-**No single new software licence applies to this entire repository.**
+Copyright © 2026 Gustave Leblanc (MA-Gustave), **solely for original protectable material over which that rightsholder actually holds rights**. No claim is made to ownership of simdjson or any third-party material.
 
-1. Third-party and upstream portions remain under their original licences. The Apache-2.0 and MIT licence texts bundled in the historical source snapshot are preserved at `licenses/historical-simdjson/`. Other file-specific notices remain effective.
-2. Code and documentation *previously* distributed under a licence such as Apache-2.0 or MIT remain usable under the applicable permissions already granted. This notice does not revoke them.
-3. Genuinely new, separable, independently copyrightable additions MAY be subject to `LICENSE-ORIGINAL-ADDITIONS.md` **only** if precisely registered in `PROVENANCE-ADDITIONS.md` and not covered by an earlier grant. No current file is assumed newly restricted merely because it is present here.
-4. Facts, methods, ideas, benchmark values and independent implementations are not made exclusive simply by this notice.
+**THIS REPOSITORY IS NOT LICENSED AS A WHOLE UNDER ONE LICENCE.** This is a rights-and-scope notice, not a blanket replacement for existing grants and not a declaration that every file is proprietary.
 
-See `LICENSE-SCOPE.md`, `AUTHORS`, and `CONTRIBUTING.md`. Legal review is advisable before relying on restrictions for mixed-origin code.
+1. **Inherited upstream and third-party material.** simdjson code retains its existing **Apache License 2.0 and/or MIT** permissions and all applicable file-specific, third-party, copyright, patent and attribution notices. The preserved licence texts are in `engine/LICENSE / licenses/historical-simdjson/LICENSE` and `engine/LICENSE-MIT / licenses/historical-simdjson/LICENSE-MIT`. Other embedded code can have different terms; review its own notices.
+2. **Already-licensed modifications.** Any fork-specific work or source portions previously released under Apache-2.0, MIT or another applicable licence remain available under the grants actually made. This file does not cancel, narrow or revoke those grants, including any licences arising under earlier GitHub repository terms or accepted contributions.
+3. **New original rights-reserved additions.** Independently protectable, controlled material that has **not** already been granted under a conflicting licence may be reserved **only under the precise identification and evidence rules** of [LICENSE-ORIGINAL-ADDITIONS.md](LICENSE-ORIGINAL-ADDITIONS.md) and [PROVENANCE-ADDITIONS.md](PROVENANCE-ADDITIONS.md). **No currently published source portion is certified as newly restricted by the supplied snapshots alone.**
+4. **Express upstream exclusion for qualifying protected material.** No permission is offered to submit, merge, incorporate, port or reuse a qualifying rights-reserved addition in the official [simdjson repository](https://github.com/simdjson/simdjson), its official successor or any codebase being prepared for upstream incorporation, without the rightsholder's separate signed written authorization. This exclusion applies irrespective of which person proposes the integration. It does not limit the original MIT/Apache rights or independent work.
+5. **Publication is not consent.** No extra exploitation licence is granted merely by public availability, documentation, benchmarking, GitHub visibility or the absence of an individualized warning, subject to platform terms, earlier grants, and mandatory legal rights and exceptions.
+6. **Authorship and original expression.** Copyrightable expression, not ideas, algorithms as such, measurements, APIs as such, independent implementations, or facts, is the object of any rights reservation. AI-generated and mixed-origin contributions require separate evidence of protectable human authorship and entitlement.
+
+**This is not an OSI-approved open-source licence for any verified restricted additions.** Do not apply proprietary terms to inherited or previously permissively licensed code.
+
+Review [LICENSE-SCOPE.md](LICENSE-SCOPE.md), [PROVENANCE-ADDITIONS.md](PROVENANCE-ADDITIONS.md), [UPSTREAM-EXCLUSION.md](UPSTREAM-EXCLUSION.md) and [CONTRIBUTING.md](CONTRIBUTING.md) before distributing or incorporating material.
+
+**Status as at 14 October 2026:** documentary notices prepared for legal and provenance review; no retroactive restriction or verified reserved source entries are asserted.

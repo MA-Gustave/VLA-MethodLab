@@ -1,3 +1,5 @@
+> **Mise à jour juridique 14 octobre 2026 :** les archives de revue contiennent des nouveaux avis de portée mixte. Voir `LICENSE`, `LICENSE-SCOPE.md` et `UPSTREAM-EXCLUSION.md`.
+
 # Publication sur les deux nouveaux dépôts GitHub
 
 - VLA-MethodLab : https://github.com/MA-Gustave/VLA-MethodLab
@@ -9,10 +11,7 @@ sont distribuées : `VLA-MethodLab_DROP_ROOT_OVERWRITE.zip` et
 imposé par ces archives.** Le Lab inclut une copie de `engine/` ; le second ZIP
 expose le même moteur directement à la racine du dépôt VectorPath-RVV.
 
-Les fichiers `LICENSE` sélectionnés sur GitHub **ne sont pas présents dans les
-ZIP** et ne seront pas écrasés. Préserver les avis tiers du moteur dérivé de
-simdjson : `engine/LICENSE`, `engine/LICENSE-MIT` et `THIRD_PARTY_LICENSES/`.
-Vérifier que les licences de dépôts conviennent à ces obligations.
+**Pour la version juridique révisée**, les deux ZIP incluent chacun un fichier racine `LICENSE` portant une carte de droits mixtes. Celui de MethodLab ne se substitue pas à `engine/LICENSE` et `engine/LICENSE-MIT`. Celui de VectorPath laisse les textes tiers d'origine intacts dans `THIRD_PARTY_LICENSES/` et `LICENSE-MIT`. Les avis de tous les tiers restent obligatoires. Les licences précédentes ne sont pas révoquées.
 
 L'extraction des fichiers ne les publie **pas** sur GitHub. Effectuer une revue
 des fichiers avant leur mise en ligne. Ne publier aucun `.env`, clé SSH, mot de
