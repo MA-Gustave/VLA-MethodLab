@@ -157,3 +157,7 @@ See [protocol](docs/EXPLORATORY_PREQUALIFICATION_60M.md).
 [Pattern library](experiments/PATTERN_LIBRARY.md) · [Acknowledgements](ACKNOWLEDGEMENTS.md).
 The original server was generously made available **free of charge by Cloud-V**.
 Upstream simdjson copyrights and licenses are retained in `engine/`.
+
+## Test 98 public benchmark corpus
+
+See [Test98 EPCC/Cloud-V quickstart](README-TEST98-QUICKSTART.md) for immutable `simdjson-data` corpus acquisition, SHA256-verified SSH deployment and reproducible official-v5-vs-RVV benchmarks. No external corpus files are committed.

@@ -7,7 +7,7 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import messagebox,ttk
-from rvvlab_test_center import (TEST94_KEY,TEST96_KEY,TEST97_KEY,check_remote_night,inspect_remote_94,
+from rvvlab_test_center import (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY,check_remote_night,inspect_remote_94,
                                 label,local_state,merge)
 from rvvlab_epcc_results import discover_epcc_runs,select_test_run,sync_epcc_run
 
@@ -84,7 +84,7 @@ class TestCenterPanel:
         ttk.Label(pane,text='Prochaine action',foreground='#5b6571').pack(anchor='w',pady=(2,4))
         ttk.Label(pane,textvariable=self.actions,wraplength=320,justify='left').pack(anchor='w')
         ttk.Button(pane,text='Voir le Test Runner et ses journaux',
-                   command=lambda:self.studio.open_advanced(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
+                   command=lambda:self.studio.notebook.select(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
         footer=ttk.Frame(p);footer.pack(fill='x',pady=(10,0))
         ttk.Label(footer,textvariable=self.notice,foreground='#40546c',wraplength=980).pack(anchor='w')
         ttk.Label(footer,text='PASS local ≠ terminé sur le serveur. Une archive locale ≠ validation JSON complète.',
@@ -215,6 +215,8 @@ class TestCenterPanel:
                         if epcc94:self.remote[TEST94_KEY]=epcc94
                         if epcc96:self.remote[TEST96_KEY]=epcc96
                         if epcc97:self.remote[TEST97_KEY]=epcc97
+                        epcc98=select_test_run(epcc,'test98')
+                        if epcc98:self.remote[TEST98_KEY]=epcc98
                     # Remote inventory is a temporary UI snapshot, never silently
                     # overwrite the local benchmark validation or PASS evidence.
                     self.notice.set(f'Verification serveur terminée : {len(runs)} campagnes NightRuns, '
@@ -265,7 +267,7 @@ class TestCenterPanel:
         item,state=self._item_and_state()
         if item is None:return
         if state['downloaded'] and not (self.studio.active_profile=='EPCC'
-                and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY)
+                and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY)
                 and self.remote.get(item['id'],{}).get('packet')
                 and self.remote[item['id']]['id']!=state.get('run_id')):
             self.open_results();return
@@ -274,7 +276,7 @@ class TestCenterPanel:
         if self.busy:
             self.notice.set('Une opération est déjà en cours.');return
         # Test94, Test96 and Test97 have their own EPCC directories, not NightRuns.
-        if self.studio.active_profile=='EPCC' and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY):
+        if self.studio.active_profile=='EPCC' and item['id'] in (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY):
             record=self.remote.get(item['id'])
             if not record or not record.get('id'):
                 messagebox.showinfo('Synchronisation EPCC',
@@ -300,7 +302,7 @@ class TestCenterPanel:
             if not self.remote94 or not self.remote94.get('id') or not self.remote94.get('packet'):
                 messagebox.showinfo('Test94','Cliquez Vérifier le serveur. Aucun paquet Test94 confirmé actuellement.');return
             self.studio.remote94_last=dict(self.remote94)
-            self.studio.open_advanced(self.studio.test_runner_tab)
+            self.studio.notebook.select(self.studio.test_runner_tab)
             self.studio.test_runner.recover_test94();return
         run_id=state.get('run_id')
         if not run_id or item['id'] not in self.remote:
@@ -333,7 +335,7 @@ class TestCenterPanel:
                 'Une tentative Test 94 existe sur le serveur, sans preuve de fin et sans job actif trouvé.\n'
                 'Une nouvelle exécution pourrait dupliquer une tâche non visible.\n\n'
                 'Poursuivre vers la confirmation de lancement ?'):return
-        self.studio.open_advanced(self.studio.test_runner_tab)
+        self.studio.notebook.select(self.studio.test_runner_tab)
         self.studio.test_runner._run_test94_after_remote_check()
 
     def run(self):
@@ -351,5 +353,5 @@ class TestCenterPanel:
             'Lancer '+item['title']+' sur '+self.studio.active_profile+' ?\n\n'
             'Cette action peut occuper le serveur pendant plusieurs heures. '
             'Le statut affiché ne prouve pas à lui seul l’absence d’un autre travail.'):return
-        self.studio.open_advanced(self.studio.test_runner_tab)
+        self.studio.notebook.select(self.studio.test_runner_tab)
         self.studio.test_runner._run([item])

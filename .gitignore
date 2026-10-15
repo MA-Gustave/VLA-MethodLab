@@ -39,3 +39,6 @@ __pycache__/
 .cache/
 .vscode/
 .idea/
+
+# Test98 corpus cache, ZIPs are fetched locally only
+/engine/.cache/test98-corpus/

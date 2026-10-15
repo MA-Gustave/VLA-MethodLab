@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "test98-real-corpus",
+  "title": "Test 98 — Corpus public simdjson-data : RVV vs officiel (EPCC / Cloud-V)",
+  "description": "Un seul test par profil : télécharge et met en cache les fichiers JSON publics sur le PC, transfert SFTP+SHA256 vers EPCC ou Cloud-V, compare les quatre builds sur les mêmes fichiers; aux exécutions suivantes vérifie/récupère sans relancer.",
+  "script": "98_real_corpus.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {"seconds": 3600, "epcc_node": "rvc02", "new_run": false}
+}

@@ -15,6 +15,13 @@ import tempfile
 import zipfile
 
 RUN_TYPES = {
+    'test98': dict(pattern=re.compile(r'^test98-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                   directory='test98-epcc-runs', status='status98.json',
+                   archive='test98_results.zip', test_id='test98-real-corpus',
+                   required=('builds98.json','machine98.json','status98.json','results98.csv',
+                             'summary98.json','REPORT_98.md','corpus_manifest98.json'),
+                   allowed=('builds98.json','machine98.json','status98.json','results98.csv',
+                            'summary98.json','REPORT_98.md','corpus_manifest98.json')),
     'test94': dict(pattern=re.compile(r'^test94-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
                    directory='test94-runs', status='status94.json',
                    archive='test94_results.zip', test_id='machine-compare-94-1h',

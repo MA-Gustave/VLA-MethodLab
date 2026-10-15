@@ -15,6 +15,7 @@ RUN_IN_TEXT=re.compile(r'night-\d{8}T\d{6}Z-[a-f0-9]{6}')
 TEST94_KEY='machine-compare-94-1h'
 TEST96_KEY='test96-epcc-8h'
 TEST97_KEY='test97-epcc-v5-3h'
+TEST98_KEY='test98-real-corpus'
 DONE={'completed','downloaded'}
 ACTIVE={'building','starting','preflight','build','screen','confirm','running','train','repeat','holdout','queued','pending','adaptive','specialists','stage1_focus'}
 BAD={'failed','safety_stop','error'}
@@ -62,11 +63,11 @@ def local_state(item,root,history=None):
         result['run_id']=_run_from_local(latest) or ''
         # EPCC archives are stored by validated remote ID, separately from
         # a local script execution. Only a completed SHA256 sync counts.
-        if identifier in (TEST94_KEY,TEST96_KEY,TEST97_KEY):
-            run_prefix='test94-' if identifier==TEST94_KEY else 'test96-' if identifier==TEST96_KEY else 'test97-'
+        if identifier in (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY):
+            run_prefix='test94-' if identifier==TEST94_KEY else 'test96-' if identifier==TEST96_KEY else 'test97-' if identifier==TEST97_KEY else 'test98-'
             for folder in directories:
                 if not folder.name.startswith('EPCC-'+run_prefix):continue
-                if (folder/'SYNC_OK.txt').is_file() and (folder/('test94_results.zip' if identifier==TEST94_KEY else 'test96_results.zip' if identifier==TEST96_KEY else 'test97_results.zip')).is_file():
+                if (folder/'SYNC_OK.txt').is_file() and (folder/('test94_results.zip' if identifier==TEST94_KEY else 'test96_results.zip' if identifier==TEST96_KEY else 'test97_results.zip' if identifier==TEST97_KEY else 'test98_results.zip')).is_file():
                     result.update(state='downloaded',downloaded=True,
                                   proof='Archive EPCC vérifiée SHA256 sur PC',
                                   directory=str(folder),run_id=folder.name[5:])
@@ -102,7 +103,7 @@ def local_state(item,root,history=None):
             except OSError:pass
     if history.get('state')=='PASS' and result['state']=='unknown':
         result.update(state='local_pass',proof='Historique PASS local seulement')
-    if identifier not in (TEST94_KEY,TEST96_KEY,TEST97_KEY) and result['run_id']:
+    if identifier not in (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY) and result['run_id']:
         night=root/'NightRuns'/result['run_id']
         if (night/'SYNC_OK.txt').is_file():
             result.update(state='downloaded',downloaded=True,proof='Snapshot NightRuns synchronisé et SHA256 vérifié',directory=str(night))

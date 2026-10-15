@@ -14,7 +14,7 @@ CONFIG_DIR=Path.home()/'.rvvlab_lab_v3'
 SETTINGS_PATH=CONFIG_DIR/({'Cloud-V':'settings_cloudv.json','EPCC':'settings_epcc.json'}.get(os.environ.get('RVVLAB_STUDIO_TARGET',''),'settings.json'))
 DEFAULT_RESULTS=Path.home()/'RVV_Lab_results'
 REMOTE_NAME_RE=re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,59}$')
-SKIP_DIRS={'.git','.hg','.svn','.idea','.vs','.vscode','.venv','venv','.ssh','.aws','.kube','.tox','build','dist','__pycache__','.mypy_cache','.pytest_cache','.ruff_cache','node_modules','rvv-server-runs','rvv-native-runs','rvv-perf-lab','coverage','_build'}
+SKIP_DIRS={'.cache','.git','.hg','.svn','.idea','.vs','.vscode','.venv','venv','.ssh','.aws','.kube','.tox','build','dist','__pycache__','.mypy_cache','.pytest_cache','.ruff_cache','node_modules','rvv-server-runs','rvv-native-runs','rvv-perf-lab','coverage','_build'}
 SECRET_GLOBS=('.env','.env.*','*.pem','*.p12','*.pfx','*.key','id_rsa*','id_ed25519*','*credentials*','*password*','*.secret','*.token','*.ppk')
 
 EXTRACT_PY = r'''
