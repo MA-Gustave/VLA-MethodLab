@@ -30,6 +30,7 @@ def readable_test(row):
     if row.get('kind')=='test94':return 'Test 94 — EPCC (1h)'
     if row.get('kind')=='test96':return 'Test 96 — EPCC (8h)'
     if row.get('kind')=='test95':return 'Test 95 — Cloud-V (8h)'
+    if row.get('kind')=='test98':return 'Test 98 — corpus JSON public (1h)'
     if row.get('kind')=='test97':return ('Test 97 — EPCC officiel v5 (3h)' if row.get('test_id')=='test97-epcc-v5-3h' else 'Test 97 — Cloud-V (8h)')
     if row.get('kind')=='test94-cloudv':return 'Test 94 — Cloud-V (1h)'
     name=str(row.get('campaign') or '').lower().replace('_','').replace('-','')
@@ -66,7 +67,7 @@ def campaign_start(row):
         if instant is not None:return instant,False
     # Historical night campaign identifiers encode UTC creation, not necessarily
     # the exact worker start. Mark this estimate explicitly with ≈.
-    match=re.fullmatch(r'(?:night|test94|test95|test96|test97)-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
+    match=re.fullmatch(r'(?:night|test94|test95|test96|test97|test98)-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
     if match:
         try:
             stamp=datetime.strptime(match.group(1),'%Y%m%dT%H%M%S').replace(tzinfo=timezone.utc)
@@ -224,10 +225,10 @@ class UnifiedCampaigns:
         ready=connected and not self.busy
         self.refresh_btn.configure(state='normal' if ready and not self.poll_busy else 'disabled')
         selected=self.by_id.get(self._selected_id(),{})
-        modern=selected.get('kind') in ('test94','test94-cloudv','test95','test96','test97')
+        modern=selected.get('kind') in ('test94','test94-cloudv','test95','test96','test97','test98')
         downloadable=selected.get('state')=='completed' and selected.get('validated') and selected.get('packet')
         self.sync_btn.configure(state='normal' if ready and state and (not modern or downloadable) else 'disabled')
-        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL and selected.get('kind') not in ('test94','test96','test94-cloudv','test95','test97') else 'disabled')
+        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL and selected.get('kind') not in ('test94','test96','test94-cloudv','test95','test97','test98') else 'disabled')
 
     def _selected_id(self):
         values=self.tree.selection()
@@ -303,7 +304,7 @@ class UnifiedCampaigns:
                     'packet':item.get('packet',False),'validated':item.get('validated',False),
                     'source_path':item.get('path',''),
                     'test_id':{'94':'machine-compare-94-1h','95':'test95-cloudv-8h',
-                               '96':'test96-epcc-8h','97':('test97-epcc-v5-3h' if profile=='EPCC' else 'test97-cloudv-8h')}[number],
+                               '96':'test96-epcc-8h','97':('test97-epcc-v5-3h' if profile=='EPCC' else 'test97-cloudv-8h'), '98':'test98-real-corpus'}[number],
                     'started_utc':None,'phase':item['state'],
                 })
         # A process may be visible before the test97-runs directory exists.
@@ -364,7 +365,7 @@ class UnifiedCampaigns:
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connecte Studio avant toute action.');return
         if action=='stop':
-            if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
+            if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
                 messagebox.showinfo('Slurm', 'Aucun arrêt EPCC automatique : utilisez les outils Slurm après vérification manuelle.');return
             if self._selected_state() in TERMINAL:
                 messagebox.showinfo('Campaign','This campaign has already finished.');return
@@ -373,7 +374,7 @@ class UnifiedCampaigns:
                 'The worker will stop at its next checkpoint. No files will be deleted.'):
                 return
         chosen=self.by_id.get(runid,{})
-        if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
+        if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
             if chosen.get('state')!='completed' or not chosen.get('validated') or not chosen.get('packet'):
                 messagebox.showinfo('Résultat indisponible','La campagne doit être terminée et validée pour être téléchargée.')
                 return
@@ -431,8 +432,8 @@ class UnifiedCampaigns:
 
     def open_results(self):
         run=self.by_id.get(self._selected_id(),{})
-        if run.get('kind') in ('test94','test96','test94-cloudv','test95','test97'):
-            n={'test94':'94','test94-cloudv':'94','test95':'95','test96':'96','test97':'97'}[run['kind']]
+        if run.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
+            n={'test94':'94','test94-cloudv':'94','test95':'95','test96':'96','test97':'97','test98':'98'}[run['kind']]
             simple=getattr(self.studio,'simple_tests',None)
             p=(simple._packet_dir(n,run['id']) if simple else
                Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/run['test_id'])

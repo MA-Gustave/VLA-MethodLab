@@ -131,9 +131,19 @@ def execute(ctx,params):
     if selected:
         requested=Path(selected).expanduser().resolve()
         if engine.resolve() not in (requested,(requested/'engine').resolve()):
-            raise RuntimeError('Test98 refused silent engine fallback: configured repo '+selected+
-                ' is incomplete. In Studio set the Repository/engine path to your full VectorPath-RVV checkout before running.')
-    ctx.log('Test98 source engine: '+str(engine))
+            # An earlier Lab Studio configuration used RVV-VLA-Lab\engine,
+            # which may no longer exist after the VLA-MethodLab refactor.
+            # Test96 already handles that migration. Allow ONLY that known
+            # legacy case, and emit a loud provenance warning in the run log.
+            legacy=selected.replace('\\','/').rstrip('/').lower()
+            if not (legacy.endswith('/rvv-vla-lab/engine') or
+                    legacy.endswith('/rvv-vla-lab')):
+                raise RuntimeError('Test98 refused engine substitution: configured repo '+selected+
+                    ' is incomplete. Select your complete VectorPath-RVV checkout or VLA-MethodLab\\engine.')
+            ctx.log('TEST98 ENGINE PATH MIGRATION: old configured path '+selected+
+                    ' is incomplete; using bundled Lab engine '+str(engine)+
+                    '. Source SHA256 will be recorded. To benchmark VectorPath directly, configure its actual full checkout.')
+    ctx.log('Test98 source engine ACTUALLY BENCHMARKED: '+str(engine))
     manager,archive,digest,identifier=local_corpus(ctx,engine)
     corpus_remote=deploy_corpus(ctx,manager,archive,digest,identifier)
     # The source snapshot is separate from the data and cached corpus never enters it.

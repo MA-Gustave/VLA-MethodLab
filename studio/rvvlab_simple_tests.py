@@ -19,10 +19,10 @@ from tkinter import ttk, messagebox
 
 from rvvlab_test_runner import SCRIPTS_DIR, TestContext, discover
 
-PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC')}
+PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC')}
 TEST_IDS = {'94': 'machine-compare-94-1h', '95': 'test95-cloudv-8h',
             '96': 'test96-epcc-8h', '97': 'test97-cloudv-8h',
-            '97-epcc': 'test97-epcc-v5-3h'}
+            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus'}
 
 
 def test_id(number, profile):
@@ -36,7 +36,7 @@ def manifest_target(manifest_id):
     """Return the test number and target restriction of a managed manifest."""
     if manifest_id == TEST_IDS['97-epcc']:
         return '97', ('EPCC',)
-    for number in ('94', '95', '96', '97'):
+    for number in ('94', '95', '96', '97', '98'):
         if manifest_id == TEST_IDS[number]:
             allowed = ('Cloud-V',) if number == '97' else PROFILES[number]
             return number, allowed
@@ -46,9 +46,10 @@ RUN_PATTERN = {
     '95': re.compile(r'^test95-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '96': re.compile(r'^test96-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '97': re.compile(r'^test97-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '98': re.compile(r'^test98-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
 }
-RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs'}
-ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip'}
+RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs', '98': 'test98-cloudv-runs'}
+ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip', '98':'test98_results.zip'}
 TERMINAL = {'completed', 'failed', 'safety_stop', 'stopped'}
 ACTIVE = {'starting', 'preflight', 'building', 'build', 'queued', 'pending', 'running', 'exploring', 'train', 'holdout', 'repeat', 'preparing'}
 
@@ -73,7 +74,7 @@ def _has_file(sftp, path):
 
 def _server_runs(ssh, remote_name, number, profile):
     """Read-only, bounded inventory; do not assume a local Studio launch record."""
-    if profile == 'EPCC' and number in ('94', '96', '97'):
+    if profile == 'EPCC' and number in ('94', '96', '97','98'):
         from rvvlab_epcc_results import discover_epcc_runs
         kind = 'test'+number
         rows = []
@@ -127,6 +128,9 @@ def _server_runs(ssh, remote_name, number, profile):
             state = str(status.get('state') or '').lower()
             zipped = _has_file(sftp, path + '/' + ZIP_NAME[number])
             valid = status.get('validated') is True
+            if number == '98':
+                count=status.get('rows',0)
+                valid=valid and type(count) is int and count>0
             if number == '96':
                 exit_status = _read_json_sftp(sftp, path + '/slurm96-exit.json')
                 if exit_status and exit_status.get('return_code') != 0:
@@ -357,9 +361,11 @@ class SimpleTestsPanel:
            ('Cloud-V','94'):'Comparaison machine · 1 heure',
            ('Cloud-V','95'):'Ablations packed et seuil A2 · 8 heures',
            ('Cloud-V','97'):'Seuils A2 de 4 à 10 Kio · 8 heures',
+           ('Cloud-V','98'):'18 JSON publics immuables · A2 et officiel v5 · 1 heure',
            ('EPCC','94'):'Comparaison RISC-V sous Slurm · 1 heure',
            ('EPCC','96'):'Ablations A2 et seuil 4 Kio · 8 heures',
            ('EPCC','97'):'A2 versus simdjson officiel v5 · 3 heures',
+           ('EPCC','98'):'18 JSON publics immuables · A2 et officiel v5 · 1 heure Slurm',
         }
         self.test_descr.set('Test '+number+'  /  '+profile+'\n'+
                             descriptions.get((profile,number),'Campagne historique')+
@@ -500,6 +506,9 @@ class SimpleTestsPanel:
         other_active=any(r.get('state') in ACTIVE or r.get('state')=='unconfirmed'
                          for runs in self.runs.values() for r in runs)
         if self.remote_checked and other_active:run_blocked=True
+        # Test98's manifest deliberately reuses an existing run instead of
+        # starting another. Make that rule obvious in the primary workflow.
+        if n=='98' and row is not None:run_blocked=True
         self.run_button.configure(state='disabled' if run_blocked else 'normal')
         self._render_workspace()
 
@@ -567,7 +576,7 @@ class SimpleTestsPanel:
         self.busy=False
         self.runs=data;self.remote_checked=True;self.checked_at=time.monotonic()
         if any(r['state'] in ACTIVE or r['state'] in ('preparing','unconfirmed') for rows in data.values() for r in rows):
-            self.notice.set('Un test 94/95/96/97 est déjà actif sur cette machine. Nouveau lancement refusé.')
+            self.notice.set('Un test 94/95/96/97/98 est déjà actif sur cette machine. Nouveau lancement refusé.')
             messagebox.showwarning('Campagne active','Une campagne est en cours ou en préparation sur '+self.profile+'. Aucun doublon lancé.')
             self._selected();return
         item=next((x for x in self.studio.test_runner.items if x['id']==test_id(number,self.profile)),None)
@@ -577,6 +586,9 @@ class SimpleTestsPanel:
         # Existing TestRunner owns launches, script SHA pinning and histories.
         if number=='94':
             self.studio.test_runner._run_test94_after_remote_check()
+        elif number=='98' and self.runs.get('98'):
+            self.notice.set('Test 98 existe déjà sur '+self.profile+'. Sélectionne la campagne pour Télécharger ; aucun nouveau job soumis.')
+            messagebox.showinfo('Test 98 déjà présent','Une campagne 98 existe sur '+self.profile+'. Utilise Actualiser / Télécharger. Aucun nouveau job démarré.')
         elif self.studio.test_runner._approval([item]):
             self.launch_number=number
             self.studio.test_runner._run([item])
@@ -586,7 +598,9 @@ class SimpleTestsPanel:
 
     def _packet_dir(self,number,runid):
         base=Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/test_id(number,self.profile)
-        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97') else 'simple-')+runid)
+        if number=='98' and self.profile=='Cloud-V':
+            return base/('Cloud-V-'+runid)
+        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97','98') else 'simple-')+runid)
 
     def download(self):
         row=self._row();number=self._number()
@@ -606,7 +620,7 @@ class SimpleTestsPanel:
                 match=next((r for r in found if r['id']==run['id']),None)
                 if not match or match['state']!='completed' or not match.get('packet') or not match.get('validated'):
                     raise RuntimeError('La campagne choisie n’est plus confirmée comme terminée.')
-                if profile=='EPCC' and number in ('94','96','97'):
+                if profile=='EPCC' and number in ('94','96','97','98'):
                     from rvvlab_epcc_results import sync_epcc_run
                     folder=sync_epcc_run(self.studio.ssh,remote_name,run['id'],
                                          self.studio.vars['results'].get())
@@ -616,7 +630,7 @@ class SimpleTestsPanel:
                     ctx=TestContext(self.studio,target,lambda x:self.events.put(('note',str(x))),
                                     threading.Event(),{'id':test_id(number,profile)})
                     ctx.ensure_connected()
-                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py'}[number]
+                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py','98':'98_real_corpus.py'}[number]
                     path=SCRIPTS_DIR/file
                     if not path.is_file():raise RuntimeError('Script de récupération absent : '+str(path))
                     spec=importlib.util.spec_from_file_location('rvvlab_simple_recovery_'+number,path)
@@ -625,6 +639,7 @@ class SimpleTestsPanel:
                         output=mod.recover(ctx,{'mode':profile,'id':run['id'],'workdir':run['path']})
                         packet=output.get('packet')
                     elif number in ('95','97'):packet=mod.grab(ctx,run['path'])
+                    elif number=='98':packet=mod.verified_archive(ctx,{'id':run['id'],'workdir':run['path']},'Cloud-V')
                     else:packet=mod.download(ctx,run['path'])
                 if not packet:raise RuntimeError('Aucune archive ZIP récupérée.')
                 self.events.put(('download',(profile,number,run['id'],str(packet),None)))

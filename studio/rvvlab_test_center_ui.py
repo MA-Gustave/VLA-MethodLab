@@ -84,7 +84,7 @@ class TestCenterPanel:
         ttk.Label(pane,text='Prochaine action',foreground='#5b6571').pack(anchor='w',pady=(2,4))
         ttk.Label(pane,textvariable=self.actions,wraplength=320,justify='left').pack(anchor='w')
         ttk.Button(pane,text='Voir le Test Runner et ses journaux',
-                   command=lambda:self.studio.notebook.select(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
+                   command=lambda:self.studio.open_advanced(self.studio.test_runner_tab)).pack(anchor='w',pady=(25,0))
         footer=ttk.Frame(p);footer.pack(fill='x',pady=(10,0))
         ttk.Label(footer,textvariable=self.notice,foreground='#40546c',wraplength=980).pack(anchor='w')
         ttk.Label(footer,text='PASS local ≠ terminé sur le serveur. Une archive locale ≠ validation JSON complète.',
@@ -302,7 +302,7 @@ class TestCenterPanel:
             if not self.remote94 or not self.remote94.get('id') or not self.remote94.get('packet'):
                 messagebox.showinfo('Test94','Cliquez Vérifier le serveur. Aucun paquet Test94 confirmé actuellement.');return
             self.studio.remote94_last=dict(self.remote94)
-            self.studio.notebook.select(self.studio.test_runner_tab)
+            self.studio.open_advanced(self.studio.test_runner_tab)
             self.studio.test_runner.recover_test94();return
         run_id=state.get('run_id')
         if not run_id or item['id'] not in self.remote:
@@ -335,7 +335,7 @@ class TestCenterPanel:
                 'Une tentative Test 94 existe sur le serveur, sans preuve de fin et sans job actif trouvé.\n'
                 'Une nouvelle exécution pourrait dupliquer une tâche non visible.\n\n'
                 'Poursuivre vers la confirmation de lancement ?'):return
-        self.studio.notebook.select(self.studio.test_runner_tab)
+        self.studio.open_advanced(self.studio.test_runner_tab)
         self.studio.test_runner._run_test94_after_remote_check()
 
     def run(self):
@@ -353,5 +353,5 @@ class TestCenterPanel:
             'Lancer '+item['title']+' sur '+self.studio.active_profile+' ?\n\n'
             'Cette action peut occuper le serveur pendant plusieurs heures. '
             'Le statut affiché ne prouve pas à lui seul l’absence d’un autre travail.'):return
-        self.studio.notebook.select(self.studio.test_runner_tab)
+        self.studio.open_advanced(self.studio.test_runner_tab)
         self.studio.test_runner._run([item])

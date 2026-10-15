@@ -37,9 +37,9 @@ class WorkspaceRefonteTests(unittest.TestCase):
         self.assertEqual(self.app.advanced_notebook.select(),str(self.app.test_runner_tab))
 
     def test_target_specific_test97(self):
-        self.assertEqual(set(self.panel.tree.get_children()),{'94','95','97'})
+        self.assertEqual(set(self.panel.tree.get_children()),{'94','95','97','98'})
         self.app.active_profile='EPCC';self.panel.profile_changed()
-        self.assertEqual(set(self.panel.tree.get_children()),{'94','96','97'})
+        self.assertEqual(set(self.panel.tree.get_children()),{'94','96','97','98'})
         self.panel.tree.selection_set('97');self.panel._selected()
         self.assertIn('3 heures',self.panel.test_descr.get())
 

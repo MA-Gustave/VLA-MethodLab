@@ -200,7 +200,7 @@ def execute(args):
                     phase='repeat' if deadline-time.monotonic()<=args.repeat_seconds else 'measure'
                     shuffled=list(docs);rng.shuffle(shuffled)
                     for rec,file in shuffled:
-                        if deadline-time.monotonic()<deadline-20:break
+                        if time.monotonic()>=deadline-20:break
                         order=list(VARIANTS);rng.shuffle(order)
                         iterations=max(2,min(100,2_000_000//rec['bytes']))
                         block=[]
