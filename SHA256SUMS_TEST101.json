@@ -1,0 +1,26 @@
+{
+  "created_utc_date": "2026-10-16",
+  "note": "Extract at VLA-MethodLab root; remote Slurm and native benchmarking not executed here.",
+  "package": "VLA-MethodLab TEST101 dual-machine DROP ROOT",
+  "paths_sha256": {
+    "ANALYSE_TEST100_CLOUDV_EPCC_ET_PROTOCOLE_TEST101.md": "26a479bda8077996b0f6f70e66c8baf0b78eb8513a565e82f9e850f183b0b504",
+    "README_TEST101_CROSS_MACHINE.md": "e5f76cd0e5028bc62ca9b321e4d6a1b4ac2e0060f9726524b14bd03e18c77aac",
+    "TEST100_EPCC_CLOUDV_PAR_DOCUMENT.csv": "c8e75487c7626bbd9ece08db7e73496d8827de3f4d1669f115cdeb5280b72b76",
+    "studio/rvvlab_epcc_results.py": "03c064888541fdc20892718f76ad344696c95bdc64902b9c8b87a665d7c9c0c5",
+    "studio/rvvlab_simple_tests.py": "b2fc2b4c515569218aaa2b110bc9219f57a3867743bdec1ce95c7c9e4ff56e5b",
+    "studio/rvvlab_test101_download.py": "6ccb11ebc38fad3fac1681408dbedc78cd403f5b83a745996a2f4410cf7a6140",
+    "studio/rvvlab_unified_campaigns.py": "36749362025ca38eee12d051fdf8614ea6dffe2f7a4eff26b9d02165409f6e37",
+    "studio/test_scripts/101_dispatch_validation.py": "047696fe82df89929089d79a79053f8665edcdf6b950fe1c97d10eef82edb0cb",
+    "studio/test_scripts/101_dispatch_validation.test.json": "ba8173e7a56812054f9c5670abf776a9afe5cbef840dec0a6503207bf578b5ed",
+    "studio/tests/test100_adaptive_offline.py": "f48ad5a8527c90efe7d73588c176b7522880a77642c7a796a658e4c5d3aebc45",
+    "studio/tests/test101_offline.py": "9569c2a9c9699507854e0aff6f255e8f6e2ee492b267b3bd2ec2b0b919b4100f",
+    "studio/tests/test_refonte_workspace.py": "92a95fa918157bb87a0952172f0dcc3e22ddbb9b00cc8ca755ad962e54aecafa",
+    "tools/test101_cloudv.sh": "45a618bb05696819db557f2a563165b37793816632ffb9e6c3350f59c7696d8d",
+    "tools/test101_diagnostic.py": "30caa8686d1eeac0a4e76b1a5fdb5b931f6413f92ce72bc1a0581daac35bef97",
+    "tools/test101_dom.cpp": "6a3190f0f9ce24ae06129529eb47b858625bd04c4fe39d65d946e09345089e4a",
+    "tools/test101_epcc.sbatch": "0067c62c18f5554f373c7ad33bd606e2911003b669f96bd56c05403fb8f38716",
+    "tools/test101_epcc_build.py": "5b9bfdda85293ce60b1d6908e662301a6d3b5095567b6454b36706fb4dce0f74",
+    "tools/test101_native.py": "c7e4a29cb50e60abd24633c6015bbcd80559e49e49a6b28fe605cd9c4dfa11f2"
+  },
+  "schema": 1
+}

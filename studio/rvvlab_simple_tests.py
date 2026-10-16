@@ -18,11 +18,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from rvvlab_test_runner import SCRIPTS_DIR, TestContext, discover
+from rvvlab_elapsed import elapsed_display
 
-PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC')}
+PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC'), '99': ('Cloud-V','EPCC'), '100': ('Cloud-V','EPCC'), '101': ('Cloud-V','EPCC'), '102': ('Cloud-V','EPCC')}
 TEST_IDS = {'94': 'machine-compare-94-1h', '95': 'test95-cloudv-8h',
             '96': 'test96-epcc-8h', '97': 'test97-cloudv-8h',
-            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus'}
+            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus', '99': 'test99-public-8h', '100': 'test100-adaptive-public', '101': 'test101-dispatch-validation', '102': 'test102-escape-stage'}
 
 
 def test_id(number, profile):
@@ -36,7 +37,7 @@ def manifest_target(manifest_id):
     """Return the test number and target restriction of a managed manifest."""
     if manifest_id == TEST_IDS['97-epcc']:
         return '97', ('EPCC',)
-    for number in ('94', '95', '96', '97', '98'):
+    for number in ('94', '95', '96', '97', '98', '99', '100','101','102'):
         if manifest_id == TEST_IDS[number]:
             allowed = ('Cloud-V',) if number == '97' else PROFILES[number]
             return number, allowed
@@ -47,9 +48,13 @@ RUN_PATTERN = {
     '96': re.compile(r'^test96-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '97': re.compile(r'^test97-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '98': re.compile(r'^test98-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '99': re.compile(r'^test99-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '100': re.compile(r'^test100-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '101': re.compile(r'^test101-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '102': re.compile(r'^test102-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
 }
-RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs', '98': 'test98-cloudv-runs'}
-ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip', '98':'test98_results.zip'}
+RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs', '98': 'test98-cloudv-runs', '99':'test99-cloudv-runs', '100':'test100-cloudv-runs', '101':'test101-cloudv-runs','102':'test102-cloudv-runs'}
+ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip', '98':'test98_results.zip', '99':'test99_results.zip', '100':'test100_results.zip', '101':'test101_results.zip','102':'test102_results.zip'}
 TERMINAL = {'completed', 'failed', 'safety_stop', 'stopped'}
 ACTIVE = {'starting', 'preflight', 'building', 'build', 'queued', 'pending', 'running', 'exploring', 'train', 'holdout', 'repeat', 'preparing'}
 
@@ -74,7 +79,7 @@ def _has_file(sftp, path):
 
 def _server_runs(ssh, remote_name, number, profile):
     """Read-only, bounded inventory; do not assume a local Studio launch record."""
-    if profile == 'EPCC' and number in ('94', '96', '97','98'):
+    if profile == 'EPCC' and number in ('94', '96', '97','98','99','100','101','102'):
         from rvvlab_epcc_results import discover_epcc_runs
         kind = 'test'+number
         rows = []
@@ -100,7 +105,9 @@ def _server_runs(ssh, remote_name, number, profile):
                     except (ValueError,OverflowError):pass
                 rows.append(dict(id=info['id'],path=info['workdir'],state=state,
                                  rows=count,packet=packet,validated=validated,
-                                 proof=info.get('proof','Serveur EPCC')))
+                                 proof=info.get('proof','EPCC server'),
+                                 started_utc=status.get('start_utc') or status.get('started_utc') or info.get('started_utc'),
+                                 updated_utc=status.get('updated_utc') or status.get('last_update_utc') or info.get('last_update')))
         return rows
     if number == '94':
         from rvvlab_test_center import inspect_remote_94
@@ -111,7 +118,9 @@ def _server_runs(ssh, remote_name, number, profile):
         if state == 'completed' and not valid:state='incomplete'
         return [dict(id=info['id'],path=info['path'],state=state,
                      rows=info.get('rows',0),packet=bool(info.get('packet')),
-                     validated=valid,proof=info.get('proof',''))]
+                     validated=valid,proof=info.get('proof',''),
+                     started_utc=info.get('started_utc') or info.get('start_utc'),
+                     updated_utc=info.get('updated_utc') or info.get('last_update'))]
     if profile not in PROFILES[number]:
         raise ValueError('This test does not match the selected machine.')
     root = ssh.base(remote_name).rstrip('/') + '/' + RUN_ROOT[number]
@@ -128,7 +137,7 @@ def _server_runs(ssh, remote_name, number, profile):
             state = str(status.get('state') or '').lower()
             zipped = _has_file(sftp, path + '/' + ZIP_NAME[number])
             valid = status.get('validated') is True
-            if number == '98':
+            if number in ('98','99','100','101','102'):
                 count=status.get('rows',0)
                 valid=valid and type(count) is int and count>0
             if number == '96':
@@ -143,7 +152,10 @@ def _server_runs(ssh, remote_name, number, profile):
                 state = 'incomplete'  # completed string alone is NOT proof
             runs.append(dict(id=name, path=path, state=state,
                              rows=status.get('rows', 0), packet=zipped,
-                             validated=valid, proof='Server queried'))
+                             validated=valid, proof='Server queried',
+                             started_utc=status.get('start_utc') or status.get('started_utc'),
+                             updated_utc=status.get('updated_utc') or status.get('last_update_utc'),
+                             ended_utc=status.get('end_utc') or status.get('finished_utc')))
         return runs
     finally:sftp.close()
 
@@ -238,10 +250,13 @@ class SimpleTestsPanel:
         self.notice=tk.StringVar(value='Connect SSH, then click Refresh.')
         self.status=tk.StringVar(value='—')
         self.details=tk.StringVar(value='Choose a test number.')
+        self.elapsed=tk.StringVar(value='Elapsed: —')
         self.selection=tk.StringVar(value='')
         self._build()
         self.profile_changed()
         parent.after(250,self._drain)
+        # Display-only one-second clock; remote status remains on the existing 60s poll.
+        parent.after(1000,self._tick_elapsed)
         # The existing Test Runner 60-second timer owns automatic refresh.
         # Do NOT create a second SSH polling cadence here.
 
@@ -302,6 +317,7 @@ class SimpleTestsPanel:
         self.banner_caption=tk.Label(self.banner,textvariable=self.banner_subtitle,
                     bg=COLORS['light_blue'],fg=COLORS['muted'],font=('Segoe UI',9),anchor='w')
         self.banner_caption.pack(anchor='w',pady=(4,0))
+        ttk.Label(card,textvariable=self.elapsed,style='CardTitle.TLabel').pack(anchor='w',pady=(0,6))
         ttk.Label(card,textvariable=self.details,style='Muted.TLabel',wraplength=690,
                   justify='left').pack(anchor='w',pady=(0,9))
         ttk.Label(card,text='03  NEXT ACTION',style='PanelCaption.TLabel').pack(anchor='w',pady=(6,8))
@@ -327,9 +343,9 @@ class SimpleTestsPanel:
         self.run_choice=ttk.Combobox(row,textvariable=self.selection,state='readonly',width=52)
         self.run_choice.pack(side='left',fill='x',expand=True)
         self.run_choice.bind('<<ComboboxSelected>>',lambda e:self._selected())
-        self.history_tree=ttk.Treeview(history,columns=('run','state','rows','zip'),
+        self.history_tree=ttk.Treeview(history,columns=('run','state','elapsed','rows','zip'),
                          show='headings',height=5,selectmode='browse')
-        for key,label,width in [('run','Run ID',260),('state','Status',145),('rows','Measurements',100),('zip','Archive',80)]:
+        for key,label,width in [('run','Run ID',220),('state','Status',108),('elapsed','Elapsed',146),('rows','Measurements',100),('zip','Archive',75)]:
             self.history_tree.heading(key,text=label)
             self.history_tree.column(key,width=width,anchor='w',stretch=(key=='run'))
         self.history_tree.tag_configure('active',background=COLORS['active_bg'],foreground=COLORS['active'])
@@ -362,10 +378,18 @@ class SimpleTestsPanel:
            ('Cloud-V','95'):'Packed ablations and A2 threshold · 8 hours',
            ('Cloud-V','97'):'A2 thresholds 4–10 KiB · 8 hours',
            ('Cloud-V','98'):'18 pinned public JSON files · A2 vs official v5 · 1 hour',
+           ('Cloud-V','99'):'18 public JSON files · A2 4/6/8 KiB vs official · 8 hours',
            ('EPCC','94'):'RISC-V comparison via Slurm · 1 hour',
            ('EPCC','96'):'A2 ablations and 4 KiB threshold · 8 hours',
            ('EPCC','97'):'A2 vs official simdjson v5 · 3 hours',
            ('EPCC','98'):'18 pinned public JSON files · A2 vs official v5 · 1 hour via Slurm',
+           ('EPCC','99'):'18 public JSON files · A2 4/6/8 KiB vs official · 8h via Slurm',
+           ('Cloud-V','102'):'Escape density / internal Stage1 + Stage2 / overnight · 6h30 cap',
+           ('EPCC','102'):'Escape density / Stage1 + Stage2 via Slurm · overnight',
+           ('Cloud-V','101'):'A2 threshold confirmation · public + derived + boundaries · 6h cap',
+           ('EPCC','101'):'A2 threshold confirmation via Slurm · public + derived + boundaries',
+           ('Cloud-V','100'):'Adaptive performance · official vs A2 4/7/8/10KiB · public + separate boundary stratum',
+           ('EPCC','100'):'Adaptive performance via Slurm · public + boundaries · 45m min / 4h max',
         }
         self.test_descr.set('Test '+number+'  /  '+profile+'\n'+
                             descriptions.get((profile,number),'Historical campaign')+
@@ -411,11 +435,34 @@ class SimpleTestsPanel:
                      ('fail',) if state in ('failed','safety_stop') else ('active',) if state in ACTIVE else ())
                 self.history_tree.insert('','end',iid=r['id'],values=(
                      r['id'], 'Completed' if tags==('ok',) else state,
-                     str(r.get('rows',0)), 'Ready' if r.get('packet') else '—'),tags=tags)
+                     elapsed_display(r)[0], str(r.get('rows',0)),
+                     'Ready' if r.get('packet') else '—'),tags=tags)
         chosen=self.selection.get()
         if chosen and self.history_tree.exists(chosen):
             if self.history_tree.selection()!=(chosen,):
                 self.history_tree.selection_set(chosen)
+
+    def _update_elapsed(self):
+        """Render duration locally; does not probe SSH or infer liveness."""
+        row=self._row()
+        elapsed,source=elapsed_display(row)
+        self.elapsed.set('Elapsed: '+elapsed+'  ·  '+source if row else 'Elapsed: —')
+        for number, rows in self.runs.items():
+            if not isinstance(rows,list):
+                continue
+            for run in rows:
+                rid=run.get('id')
+                if rid and self.history_tree.exists(rid):
+                    self.history_tree.set(rid,'elapsed',elapsed_display(run)[0])
+
+    def _tick_elapsed(self):
+        try:
+            if not self.parent.winfo_exists():
+                return
+            self._update_elapsed()
+            self.parent.after(1000,self._tick_elapsed)
+        except tk.TclError:
+            return
 
     def _highlight_selection(self):
         names=[str(t) for iid in self.tree.selection() if self.tree.exists(iid)
@@ -497,7 +544,7 @@ class SimpleTestsPanel:
                                   'No run found on '+self.profile+'.')
         else:self.details.set('Status unconfirmed. Refresh never starts a benchmark.')
         can_download=bool(self.studio.ssh.connected() and self.remote_checked and row and
-                          row['state']=='completed' and row.get('packet') and row.get('validated'))
+                          (row['state']=='completed' and row.get('validated') or n in ('100','101','102') and row['state'] in ('failed','stopped')) and row.get('packet'))
         self.download_button.configure(state='normal' if can_download and not self.busy else 'disabled')
         run_blocked=(not self.studio.ssh.connected() or self.busy or self.poll_busy or self.studio.test_runner.busy or
                      self.last_check_error is not None or process_here or
@@ -508,9 +555,10 @@ class SimpleTestsPanel:
         if self.remote_checked and other_active:run_blocked=True
         # Test98's manifest deliberately reuses an existing run instead of
         # starting another. Make that rule obvious in the primary workflow.
-        if n=='98' and row is not None:run_blocked=True
+        if n in ('98','99') and row is not None:run_blocked=True
         self.run_button.configure(state='disabled' if run_blocked else 'normal')
         self._render_workspace()
+        self._update_elapsed()
 
     def refresh(self):
         if self.poll_busy or self.busy:return
@@ -541,7 +589,7 @@ class SimpleTestsPanel:
         number=self._number()
         if not number:return
         if not self.studio.ssh.connected():
-            messagebox.showwarning('SSH','Connectez la machine selected avant Run.');return
+            messagebox.showwarning('SSH','Connect the selected machine before Run.');return
         if (self.busy or self.poll_busy or self.studio.test_runner.busy or
             getattr(getattr(self.studio,'corpus_library',None),'busy',False)):
             self.notice.set('A launch or status check is already in progress. Run blocked to prevent duplicates.')
@@ -552,7 +600,7 @@ class SimpleTestsPanel:
         remote_name=self.studio.vars['remote_name'].get().strip()
         def work():
             try:
-                # Checking ALL supported tests also catches overlapping 94/95/96/97.
+                # Checking ALL supported tests also catches overlapping 94–99.
                 data={n:_server_runs(self.studio.ssh,remote_name,n,profile)
                       for n in PROFILES if profile in PROFILES[n]}
                 processes=_remote_test97_processes(self.studio.ssh) if profile=='Cloud-V' else []
@@ -577,7 +625,7 @@ class SimpleTestsPanel:
         self.busy=False
         self.runs=data;self.remote_checked=True;self.checked_at=time.monotonic()
         if any(r['state'] in ACTIVE or r['state'] in ('preparing','unconfirmed') for rows in data.values() for r in rows):
-            self.notice.set('A Test 94/95/96/97/98 run is already active on this machine. Duplicate launch blocked.')
+            self.notice.set('A Test 94/95/96/97/98/99 run is already active on this machine. Duplicate launch blocked.')
             messagebox.showwarning('Active run','A run is active or preparing on '+self.profile+'. No duplicate launched.')
             self._selected();return
         item=next((x for x in self.studio.test_runner.items if x['id']==test_id(number,self.profile)),None)
@@ -587,9 +635,9 @@ class SimpleTestsPanel:
         # Existing TestRunner owns launches, script SHA pinning and histories.
         if number=='94':
             self.studio.test_runner._run_test94_after_remote_check()
-        elif number=='98' and self.runs.get('98'):
-            self.notice.set('Test 98 already exists on '+self.profile+'. Select the run to Download; no new job submitted.')
-            messagebox.showinfo('Test 98 already exists','A Test 98 run exists on '+self.profile+'. Use Refresh / Download. No new job started.')
+        elif number in ('98','99') and self.runs.get(number):
+            self.notice.set('Test '+number+' already exists on '+self.profile+'. Select the run to Download; no new job submitted.')
+            messagebox.showinfo('Test already exists','A test run exists on '+self.profile+'. Use Refresh / Download. No new job started.')
         elif self.studio.test_runner._approval([item]):
             self.launch_number=number
             self.studio.test_runner._run([item])
@@ -599,14 +647,14 @@ class SimpleTestsPanel:
 
     def _packet_dir(self,number,runid):
         base=Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/test_id(number,self.profile)
-        if number=='98' and self.profile=='Cloud-V':
+        if number in ('98','99','100','101','102') and self.profile=='Cloud-V':
             return base/('Cloud-V-'+runid)
-        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97','98') else 'simple-')+runid)
+        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97','98','99','100','101','102') else 'simple-')+runid)
 
     def download(self):
         row=self._row();number=self._number()
         if not row or not number or self.busy or not self.studio.ssh.connected():return
-        if not (self.remote_checked and row['state']=='completed' and row['packet'] and row.get('validated')):
+        if not (self.remote_checked and row['packet'] and ((row['state']=='completed' and row.get('validated')) or (number in ('100','101','102') and row['state'] in ('failed','stopped')))):
             messagebox.showinfo('Not finished yet','Click Refresh. Download will be enabled once completion is validated.');return
         target=self._packet_dir(number,row['id'])
         self.busy=True;self._selected()
@@ -619,9 +667,27 @@ class SimpleTestsPanel:
                 # Recheck the SAME remote run before copying, not the newest run.
                 found=_server_runs(self.studio.ssh,remote_name,number,profile)
                 match=next((r for r in found if r['id']==run['id']),None)
-                if not match or match['state']!='completed' or not match.get('packet') or not match.get('validated'):
+                if not match or not match.get('packet') or not ((match['state']=='completed' and match.get('validated')) or (number in ('100','101','102') and match['state'] in ('failed','stopped'))):
                     raise RuntimeError('The selected run is no longer confirmed as completed.')
-                if profile=='EPCC' and number in ('94','96','97','98'):
+                if number=='100' and profile=='Cloud-V':
+                    # Preserve the existing Windows-safe Test100 downloader.
+                    from rvvlab_test100_download import sync_cloudv_test100
+                    packet=sync_cloudv_test100(
+                        self.studio.ssh, remote_name, run['id'],
+                        self.studio.vars['results'].get(), workdir=run['path'])
+                elif number=='102' and profile=='Cloud-V':
+                    from rvvlab_test102_download import sync_cloudv_test102
+                    packet=sync_cloudv_test102(
+                        self.studio.ssh, remote_name, run['id'],
+                        self.studio.vars['results'].get(), workdir=run['path'],
+                        expected_state='completed' if match['state']=='completed' else None)
+                elif number=='101' and profile=='Cloud-V':
+                    # Independent verified downloader and result directory.
+                    from rvvlab_test101_download import sync_cloudv_test101
+                    packet=sync_cloudv_test101(
+                        self.studio.ssh, remote_name, run['id'],
+                        self.studio.vars['results'].get(), workdir=run['path'])
+                elif profile=='EPCC' and number in ('94','96','97','98','99','100','101','102'):
                     from rvvlab_epcc_results import sync_epcc_run
                     folder=sync_epcc_run(self.studio.ssh,remote_name,run['id'],
                                          self.studio.vars['results'].get())
@@ -631,7 +697,7 @@ class SimpleTestsPanel:
                     ctx=TestContext(self.studio,target,lambda x:self.events.put(('note',str(x))),
                                     threading.Event(),{'id':test_id(number,profile)})
                     ctx.ensure_connected()
-                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py','98':'98_real_corpus.py'}[number]
+                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py','98':'98_real_corpus.py','99':'99_public_8h.py','100':'100_adaptive_public.py', '101':'101_dispatch_validation.py','102':'102_escape_stage.py'}[number]
                     path=SCRIPTS_DIR/file
                     if not path.is_file():raise RuntimeError('Recovery script missing: '+str(path))
                     spec=importlib.util.spec_from_file_location('rvvlab_simple_recovery_'+number,path)
@@ -640,7 +706,7 @@ class SimpleTestsPanel:
                         output=mod.recover(ctx,{'mode':profile,'id':run['id'],'workdir':run['path']})
                         packet=output.get('packet')
                     elif number in ('95','97'):packet=mod.grab(ctx,run['path'])
-                    elif number=='98':packet=mod.verified_archive(ctx,{'id':run['id'],'workdir':run['path']},'Cloud-V')
+                    elif number in ('98','99','100','101','102'):packet=mod.verified_archive(ctx,{'id':run['id'],'workdir':run['path']},'Cloud-V')
                     else:packet=mod.download(ctx,run['path'])
                 if not packet:raise RuntimeError('No ZIP archive downloaded.')
                 self.events.put(('download',(profile,number,run['id'],str(packet),None)))

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "test101-dispatch-validation",
+  "title": "Test 101 \u2014 A2 threshold confirmation (Cloud-V / EPCC)",
+  "description": "Revalidate A2 4/8/10/12/16 KiB against pinned public JSON, separately labeled derived fragments, and expanded synthetic boundary probes. Public source SHA256, adaptive precision, native checks, verified ZIP; Cloud-V + EPCC.",
+  "script": "101_dispatch_validation.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "max_seconds": 21600,
+    "epcc_node": "rvc02",
+    "new_run": true
+  }
+}

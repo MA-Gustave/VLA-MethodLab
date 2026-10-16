@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "test99-public-8h",
+  "title": "Test 99 — 8h public JSON performance: A2 4/6/8 KiB vs official (Cloud-V / EPCC)",
+  "description": "8h paired DOM measurements on 18 immutable public JSON documents; 2h confirmation phase on same files. 5 compiler variants; verified shared performance corpus, no synthetic data. One run per machine; status and verified ZIP in Tests.",
+  "script": "99_public_8h.py",
+  "enabled": true,
+  "manual_only": true,
+  "requires_shared_corpus": "performance",
+  "params": {
+    "seconds": 28800,
+    "epcc_node": "rvc02",
+    "new_run": false
+  }
+}

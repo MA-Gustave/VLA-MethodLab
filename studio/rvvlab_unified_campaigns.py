@@ -30,7 +30,11 @@ def readable_test(row):
     if row.get('kind')=='test94':return 'Test 94 — EPCC (1h)'
     if row.get('kind')=='test96':return 'Test 96 — EPCC (8h)'
     if row.get('kind')=='test95':return 'Test 95 — Cloud-V (8h)'
-    if row.get('kind')=='test98':return 'Test 98 — corpus JSON public (1h)'
+    if row.get('kind')=='test98':return 'Test 98 — public JSON (1h)'
+    if row.get('kind')=='test102':return 'Test 102 — Overnight escape-density Stage 1/2'
+    if row.get('kind')=='test101':return 'Test 101 — Cross-machine A2 threshold validation'
+    if row.get('kind')=='test100':return 'Test 100 — Adaptive public + boundary DOM'
+    if row.get('kind')=='test99':return 'Test 99 — public JSON A2 4/6/8 KiB (8h)'
     if row.get('kind')=='test97':return ('Test 97 — EPCC officiel v5 (3h)' if row.get('test_id')=='test97-epcc-v5-3h' else 'Test 97 — Cloud-V (8h)')
     if row.get('kind')=='test94-cloudv':return 'Test 94 — Cloud-V (1h)'
     name=str(row.get('campaign') or '').lower().replace('_','').replace('-','')
@@ -67,7 +71,7 @@ def campaign_start(row):
         if instant is not None:return instant,False
     # Historical night campaign identifiers encode UTC creation, not necessarily
     # the exact worker start. Mark this estimate explicitly with ≈.
-    match=re.fullmatch(r'(?:night|test94|test95|test96|test97|test98)-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
+    match=re.fullmatch(r'(?:night|test94|test95|test96|test97|test98|test99|test100|test101|test102)-(\d{8}T\d{6})Z-[0-9a-f]{6}',str(row.get('id') or ''))
     if match:
         try:
             stamp=datetime.strptime(match.group(1),'%Y%m%dT%H%M%S').replace(tzinfo=timezone.utc)
@@ -225,10 +229,10 @@ class UnifiedCampaigns:
         ready=connected and not self.busy
         self.refresh_btn.configure(state='normal' if ready and not self.poll_busy else 'disabled')
         selected=self.by_id.get(self._selected_id(),{})
-        modern=selected.get('kind') in ('test94','test94-cloudv','test95','test96','test97','test98')
+        modern=selected.get('kind') in ('test94','test94-cloudv','test95','test96','test97','test98','test99','test100','test101','test102')
         downloadable=selected.get('state')=='completed' and selected.get('validated') and selected.get('packet')
         self.sync_btn.configure(state='normal' if ready and state and (not modern or downloadable) else 'disabled')
-        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL and selected.get('kind') not in ('test94','test96','test94-cloudv','test95','test97','test98') else 'disabled')
+        self.stop_btn.configure(state='normal' if ready and state and state not in TERMINAL and selected.get('kind') not in ('test94','test96','test94-cloudv','test95','test97','test98','test99','test100','test101','test102') else 'disabled')
 
     def _selected_id(self):
         values=self.tree.selection()
@@ -304,7 +308,7 @@ class UnifiedCampaigns:
                     'packet':item.get('packet',False),'validated':item.get('validated',False),
                     'source_path':item.get('path',''),
                     'test_id':{'94':'machine-compare-94-1h','95':'test95-cloudv-8h',
-                               '96':'test96-epcc-8h','97':('test97-epcc-v5-3h' if profile=='EPCC' else 'test97-cloudv-8h'), '98':'test98-real-corpus'}[number],
+                               '96':'test96-epcc-8h','97':('test97-epcc-v5-3h' if profile=='EPCC' else 'test97-cloudv-8h'), '98':'test98-real-corpus','99':'test99-public-8h','100':'test100-adaptive-public','101':'test101-dispatch-validation','102':'test102-escape-stage'}[number],
                     'started_utc':None,'phase':item['state'],
                 })
         # A process may be visible before the test97-runs directory exists.
@@ -365,7 +369,7 @@ class UnifiedCampaigns:
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connecte Studio avant toute action.');return
         if action=='stop':
-            if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
+            if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98','test99','test100','test101','test102'):
                 messagebox.showinfo('Slurm', 'EPCC runs cannot be stopped automatically here. Check the job and use Slurm tools.');return
             if self._selected_state() in TERMINAL:
                 messagebox.showinfo('Campaign','This campaign has already finished.');return
@@ -374,7 +378,7 @@ class UnifiedCampaigns:
                 'The worker will stop at its next checkpoint. No files will be deleted.'):
                 return
         chosen=self.by_id.get(runid,{})
-        if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
+        if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98','test99','test100','test101','test102'):
             if chosen.get('state')!='completed' or not chosen.get('validated') or not chosen.get('packet'):
                 messagebox.showinfo('Result unavailable','The run must be completed and validated before Download.')
                 return
@@ -432,8 +436,8 @@ class UnifiedCampaigns:
 
     def open_results(self):
         run=self.by_id.get(self._selected_id(),{})
-        if run.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
-            n={'test94':'94','test94-cloudv':'94','test95':'95','test96':'96','test97':'97','test98':'98'}[run['kind']]
+        if run.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98','test99','test100','test101','test102'):
+            n={'test94':'94','test94-cloudv':'94','test95':'95','test96':'96','test97':'97','test98':'98','test99':'99','test100':'100','test101':'101','test102':'102'}[run['kind']]
             simple=getattr(self.studio,'simple_tests',None)
             p=(simple._packet_dir(n,run['id']) if simple else
                Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/run['test_id'])

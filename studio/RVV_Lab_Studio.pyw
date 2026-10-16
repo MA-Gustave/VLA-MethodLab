@@ -51,10 +51,24 @@ def open_local(path:Path):
 
 
 def read_previous_settings():
-    try:
-        obj=json.loads(SETTINGS_PATH.read_text(encoding='utf-8'))
-        return obj if isinstance(obj,dict) else {}
-    except (OSError,ValueError):return {}
+    """Load per-machine preferences without losing existing shared Studio profiles.
+
+    Dedicated Cloud-V / EPCC windows have their own settings files.  On their
+    *first* run, import preferences read-only from the older shared settings.json
+    if a machine-specific file has not been created yet.  Subsequent writes go
+    only to SETTINGS_PATH (the already machine-isolated destination).
+    """
+    candidates = [SETTINGS_PATH]
+    if TARGET and not SETTINGS_PATH.is_file():
+        candidates.append(SETTINGS_PATH.with_name('settings.json'))
+    for source in candidates:
+        try:
+            obj = json.loads(source.read_text(encoding='utf-8'))
+            if isinstance(obj,dict):
+                return obj
+        except (OSError,ValueError):
+            continue
+    return {}
 
 
 class Studio:
