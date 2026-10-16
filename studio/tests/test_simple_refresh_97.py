@@ -14,7 +14,7 @@ class WorkflowFixTests(unittest.TestCase):
     def test_no_local_attempt_is_not_a_remote_success(self):
         with tempfile.TemporaryDirectory() as p:
             self.assertIsNone(_local_attempt(p,'97'))
-            self.assertIn('Aucun lancement distant',_describe_local(None,False))
+            self.assertIn('No remote launch',_describe_local(None,False))
 
     def test_local_failed_before_remote_folder(self):
         with tempfile.TemporaryDirectory() as p:
@@ -24,7 +24,7 @@ class WorkflowFixTests(unittest.TestCase):
             state=_local_attempt(p,'97')
             self.assertEqual(state['state'],'failed_local')
             self.assertIn('source missing',state['detail'])
-            self.assertIn('Échec',_describe_local(state,False))
+            self.assertIn('failed',_describe_local(state,False))
 
     def test_local_launcher_still_working_no_remote_folder(self):
         with tempfile.TemporaryDirectory() as p:
@@ -32,7 +32,7 @@ class WorkflowFixTests(unittest.TestCase):
             root.mkdir(parents=True)
             (root/'runner.log').write_text('START test97-cloudv-8h\nSFTP: 10%\n')
             self.assertEqual(_local_attempt(p,'97')['state'],'started_local')
-            self.assertIn('Studio prépare',_describe_local(None,True))
+            self.assertIn('Studio is preparing',_describe_local(None,True))
 
     def test_preflight_fails_are_saved(self):
         with tempfile.TemporaryDirectory() as p:

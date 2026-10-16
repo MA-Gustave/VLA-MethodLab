@@ -21,31 +21,46 @@ import uuid
 import zipfile
 
 LAB = Path(__file__).resolve().parents[1]
-MANAGER = LAB / 'tools' / 'corpus98.py'
+MANAGER = LAB / 'tools' / 'corpus98.py'  # Legacy Test98 API, preserve default
+SUITES = {'performance': MANAGER, 'conformance': LAB / 'tools' / 'corpus_jsontestsuite.py',
+          'stress': LAB / 'tools' / 'corpus_rvv_stress.py'}
+SUITE_LABELS = {'performance':'Performance · 18 JSON', 'conformance':'Conformance · JSONTestSuite',
+                'stress':'Stress RVV · 90 JSON'}
+
+def _check_suite(suite):
+    if suite not in SUITES: raise ValueError('Unknown corpus suite: '+str(suite))
+    return SUITES[suite]
 
 
-def manager():
-    spec = importlib.util.spec_from_file_location('rvvlab_pinned_corpus', MANAGER)
+def manager(suite='performance'):
+    path = _check_suite(suite)
+    spec = importlib.util.spec_from_file_location('rvvlab_pinned_corpus_'+suite, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError('Gestionnaire de corpus manquant: '+str(MANAGER))
+        raise RuntimeError('Corpus manager not found: '+str(path))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
-def catalog():
-    m = manager()
+def catalog(suite='performance'):
+    m = manager(suite)
+    descriptions={'performance':'18 public performance JSON files (simdjson-data)',
+                  'conformance':'JSONTestSuite: y_/n_/i_ parsing cases and transforms, bytes preserved',
+                  'stress':'90 deterministic RVV stress JSON files, sizes 2–16 KiB'}
     return {'id':m.CORPUS_ID,'files':m.FILES,'commit':m.SOURCE_COMMIT,
-            'source':m.SOURCE_URL,'description':'18 JSON publics épinglés (documents entiers)',
-            'protocol':'rvvlab-corpus-v1'}
+            'source':m.SOURCE_URL,'description':descriptions[suite],
+            'protocol':'rvvlab-corpus-v1','suite':suite}
+
+def catalogs():
+    return {suite: catalog(suite) for suite in SUITES}
 
 
 def cache_dir(lab=LAB):
     return Path(lab) / '.cache' / 'corpus-library'
 
 
-def archive_path(lab=LAB):
-    return cache_dir(lab) / (manager().CORPUS_ID + '.zip')
+def archive_path(lab=LAB, suite='performance'):
+    return cache_dir(lab) / (manager(suite).CORPUS_ID + '.zip')
 
 
 def _sha(path):
@@ -55,14 +70,15 @@ def _sha(path):
     return h.hexdigest()
 
 
-def inspect_local(lab=LAB):
-    path=archive_path(lab)
-    out={'state':'absent','archive':str(path),'corpus_id':manager().CORPUS_ID}
+def inspect_local(lab=LAB, suite='performance'):
+    path=archive_path(lab,suite)
+    out={'state':'absent','archive':str(path),'corpus_id':manager(suite).CORPUS_ID,'suite':suite}
     if not path.exists():return out
     try:
-        m=manager().verify(path)
+        m=manager(suite).verify(path)
         out.update(state='verified',digest=_sha(path),files=m['files'],count=len(m['files']),
-                   total_bytes=sum(x['bytes'] for x in m['files']))
+                   total_bytes=sum(x['bytes'] for x in m['files']),
+                   counts={label: sum(rec.get('expected')==label for rec in m['files']) for label in ('accept','reject','implementation','transform')})
     except (OSError,ValueError,KeyError,TypeError,RuntimeError,zipfile.BadZipFile) as exc:
         out.update(state='invalid',error=str(exc)[:450])
     return out
@@ -101,39 +117,65 @@ def _reuse_legacy_archive(lab,cache):
     finally:temp.unlink(missing_ok=True)
 
 
-def prepare_local(lab=LAB, log=None):
-    """Fetch only pinned upstream documents; fail closed if offline. No fake corpus."""
-    log=log or (lambda x:None)
+def prepare_local(lab=LAB, log=None, suite='performance'):
+    """Prepare the pinned suite, with a durable diagnostic log on every attempt.
+
+    The log is local to the Lab cache and is not uploaded with benchmark data.
+    No fake fixtures are substituted for a failed GitHub download.
+    """
     cache=cache_dir(lab)
     cache.mkdir(parents=True,exist_ok=True)
-    with _local_lock(cache):
-        local=inspect_local(lab)
-        if local['state']=='verified':
-            log('Corpus vérifié dans le cache commun ; aucun téléchargement.')
-            return local
-        if local['state']=='invalid':
-            raise RuntimeError('Corpus local invalide : '+str(local.get('error'))+'. Ne sera pas écrasé automatiquement.')
-        if _reuse_legacy_archive(lab,cache):
-            log('Archive Test98 existante vérifiée et réutilisée sans Internet.')
-        else:
-            cmd=[sys.executable,str(MANAGER),'prepare','--cache',str(cache)]
-            log('Préparation du corpus public épinglé ; cache partagé entre les tests…')
-            p=subprocess.run(cmd,capture_output=True,text=True,timeout=1800)
-            if p.returncode:
-                raise RuntimeError('Téléchargement/validation impossible. '+(p.stderr or p.stdout)[-1800:])
-        result=inspect_local(lab)
-        if result['state']!='verified':raise RuntimeError('Corpus local non vérifié : '+str(result.get('error')))
-        log('Corpus vérifié : '+str(result['count'])+' JSON ; '+result['digest'][:20]+'…')
-        return result
+    _check_suite(suite)
+    diagnostic=cache/('preparation-'+suite+'.log')
+
+    def report(message):
+        message=str(message)
+        stamp=dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        with diagnostic.open('a',encoding='utf-8') as dest:
+            dest.write('['+stamp+'] '+message+'\n')
+        if log is not None:log(message)
+
+    report('Preparation started: '+suite+'; cache='+str(cache))
+    try:
+        with _local_lock(cache):
+            local=inspect_local(lab,suite)
+            if local['state']=='verified':
+                report('Existing archive verified; no network operation needed.')
+                return local
+            if local['state']=='invalid':
+                raise RuntimeError('Invalid local corpus: '+str(local.get('error'))+'. Will not overwrite automatically.')
+            if suite=='performance' and _reuse_legacy_archive(lab,cache):
+                report('Existing Test98 archive verified and reused offline.')
+            else:
+                cmd=[sys.executable,str(_check_suite(suite)),'prepare','--cache',str(cache)]
+                report('Starting corpus manager: '+_check_suite(suite).name)
+                report('Downloading pinned revision if the cache is missing (this may take several minutes)…')
+                try:
+                    p=subprocess.run(cmd,capture_output=True,text=True,timeout=1800)
+                except subprocess.TimeoutExpired as exc:
+                    raise RuntimeError('Corpus preparation timed out after 30 minutes.') from exc
+                if p.returncode:
+                    output=(p.stderr or p.stdout or 'No manager output').strip()
+                    report('Corpus manager failed (exit code '+str(p.returncode)+') : '+output[-4500:])
+                    raise RuntimeError('Download or validation failed: '+output[-1100:])
+                report('Corpus manager completed: '+(p.stdout or 'OK').strip()[-1000:])
+            result=inspect_local(lab,suite)
+            if result['state']!='verified':
+                raise RuntimeError('Local corpus not verified: '+str(result.get('error','archive missing after preparation')))
+            report('SUCCESS: '+str(result['count'])+' files verified; SHA-256='+result['digest'])
+            return result
+    except Exception as exc:
+        report('FAILURE: '+type(exc).__name__+': '+str(exc)[:1800])
+        raise RuntimeError(str(exc)[:850]+' | Log: '+str(diagnostic)) from exc
 
 
 def _q(x):return shlex.quote(str(x))
 
 
-def remote_paths(ssh,remote_name,digest):
-    cat=catalog();root=ssh.base(remote_name).rstrip('/')+'/corpora/shared/'+cat['id']+'/'+digest[:20]
+def remote_paths(ssh,remote_name,digest,suite='performance'):
+    cat=catalog(suite);root=ssh.base(remote_name).rstrip('/')+'/corpora/shared/'+cat['id']+'/'+digest[:20]
     return {'root':root,'archive':root+'/'+cat['id']+'.zip',
-            'manager':root+'/corpus98.py','data':root+'/data/'+cat['id'],
+            'manager':root+'/'+_check_suite(suite).name,'data':root+'/data/'+cat['id'],
             'status':root+'/corpus-status.json'}
 
 
@@ -142,27 +184,27 @@ def _exists(sftp,path):
     except OSError:return False
 
 
-def remote_probe(ssh,remote_name,digest,*,deep=False):
+def remote_probe(ssh,remote_name,digest,*,deep=False,suite='performance'):
     """Never claim a corpus is installed on the basis of a status flag alone."""
-    p=remote_paths(ssh,remote_name,digest)
+    p=remote_paths(ssh,remote_name,digest,suite)
     with ssh.client.open_sftp() as sftp:
         if not _exists(sftp,p['status']):return {'state':'absent',**p}
         try:
             with sftp.open(p['status'],'r') as f:raw=f.read(16384)
             if isinstance(raw,bytes):raw=raw.decode('utf-8')
             meta=json.loads(raw)
-        except (OSError,ValueError,UnicodeError,TypeError):return {'state':'invalid','reason':'Métadonnées distantes illisibles',**p}
-        if meta.get('schema')!=1 or meta.get('corpus_id')!=catalog()['id'] or meta.get('sha256')!=digest or meta.get('root')!=p['data']:
-            return {'state':'invalid','reason':'Manifeste distant incohérent',**p}
+        except (OSError,ValueError,UnicodeError,TypeError):return {'state':'invalid','reason':'Unreadable remote metadata',**p}
+        if meta.get('schema')!=1 or meta.get('corpus_id')!=catalog(suite)['id'] or meta.get('sha256')!=digest or meta.get('root')!=p['data']:
+            return {'state':'invalid','reason':'Remote manifest mismatch',**p}
         if not _exists(sftp,p['archive']) or not _exists(sftp,p['data']+'/manifest.json'):
-            return {'state':'incomplete','reason':'ZIP ou fichiers extraits absents',**p}
+            return {'state':'incomplete','reason':'ZIP or extracted files missing',**p}
     # The status was written only after a successful extraction. A subsequent
     # on-disk modification is caught by checksum here, or deep member validation.
     reported=ssh.exec_text('sha256sum '+_q(p['archive'])).strip().split()[0]
-    if reported!=digest:return {'state':'invalid','reason':'SHA-256 ZIP distant incorrect',**p}
+    if reported!=digest:return {'state':'invalid','reason':'Remote ZIP SHA-256 mismatch',**p}
     if deep:
         if not manager_cli_available(ssh,p):
-            return {'state':'invalid','reason':'Vérificateur distant absent',**p}
+            return {'state':'invalid','reason':'Remote verifier missing',**p}
         ssh.exec_text('python3 '+_q(p['manager'])+' extract '+_q(p['archive'])+' '+_q(p['root']+'/data'))
     return {'state':'verified','count':meta.get('count'),'digest':digest,**p}
 
@@ -191,17 +233,17 @@ def _upload(ssh,source,target,digest):
         except Exception:pass
 
 
-def sync_remote(ssh,remote_name,lab=LAB,log=None):
+def sync_remote(ssh,remote_name,lab=LAB,log=None,suite='performance'):
     """Manually install the exact pinned corpus on the active target only."""
     log=log or (lambda x:None)
-    local=inspect_local(lab)
+    local=inspect_local(lab,suite)
     if local['state']!='verified':
-        raise RuntimeError('Corpus local absent/invalide. Cliquez d’abord Préparer les 18 JSON.')
-    digest=local['digest'];p=remote_paths(ssh,remote_name,digest)
+        raise RuntimeError('Local corpus missing/invalid. Run Prepare / Verify JSON first.')
+    digest=local['digest'];p=remote_paths(ssh,remote_name,digest,suite)
     try:
-        existing=remote_probe(ssh,remote_name,digest,deep=True)
+        existing=remote_probe(ssh,remote_name,digest,deep=True,suite=suite)
         if existing['state']=='verified':
-            log('Déjà synchronisé et vérifié sur ce serveur ; aucun transfert.')
+            log('Already synced and verified on this server; no upload needed.')
             return existing
     except (OSError,RuntimeError):
         # Re-upload and reverify if the target has incomplete cached data.
@@ -213,19 +255,20 @@ def sync_remote(ssh,remote_name,lab=LAB,log=None):
         present=ssh.exec_text('sha256sum '+_q(p['archive'])).strip().split()[0]
     else:present=''
     if present!=digest:
-        log('Transfert SFTP du ZIP vérifié vers '+p['root']+'…')
+        log('Uploading verified ZIP by SFTP to '+p['root']+'…')
         _upload(ssh,Path(local['archive']),p['archive'],digest)
-    else:log('ZIP déjà présent, téléchargement évité.')
-    manager_digest=_sha(MANAGER)
+    else:log('ZIP already present; upload skipped.')
+    manager_path=_check_suite(suite)
+    manager_digest=_sha(manager_path)
     with ssh.client.open_sftp() as sftp:
         has_manager=_exists(sftp,p['manager'])
     if has_manager:
         existing_mgr=ssh.exec_text('sha256sum '+_q(p['manager'])).strip().split()[0]
     else:existing_mgr=''
-    if existing_mgr!=manager_digest:_upload(ssh,MANAGER,p['manager'],manager_digest)
+    if existing_mgr!=manager_digest:_upload(ssh,manager_path,p['manager'],manager_digest)
     # Full remote syntax/hash validation and immutable extraction.
     ssh.exec_text('python3 '+_q(p['manager'])+' extract '+_q(p['archive'])+' '+_q(p['root']+'/data'))
-    meta={'schema':1,'corpus_id':catalog()['id'],'sha256':digest,'count':local['count'],
+    meta={'schema':1,'corpus_id':catalog(suite)['id'],'sha256':digest,'count':local['count'],
           'root':p['data'],'verified_utc':dt.datetime.now(dt.timezone.utc).isoformat()}
     # SFTP temp+atomic rename, no extra shell packages required.
     temp=p['status']+'.partial-'+uuid.uuid4().hex[:12]
@@ -236,17 +279,17 @@ def sync_remote(ssh,remote_name,lab=LAB,log=None):
     finally:
         try:ssh.exec_text('rm -f '+_q(temp))
         except Exception:pass
-    result=remote_probe(ssh,remote_name,digest,deep=True)
-    if result['state']!='verified':raise RuntimeError('Corpus distant non validé: '+str(result))
-    log('Corpus prêt sur serveur : '+p['data'])
+    result=remote_probe(ssh,remote_name,digest,deep=True,suite=suite)
+    if result['state']!='verified':raise RuntimeError('Remote corpus not validated: '+str(result))
+    log('Corpus ready on server: '+p['data'])
     return result
 
 
-def require_remote(ssh,remote_name,lab=LAB):
+def require_remote(ssh,remote_name,lab=LAB,suite='performance'):
     """For any future test script: confirmed installed path, no implicit upload."""
-    local=inspect_local(lab)
-    if local['state']!='verified':raise RuntimeError('Préparez le corpus dans l’onglet Corpus JSON.')
-    info=remote_probe(ssh,remote_name,local['digest'],deep=True)
-    if info['state']!='verified':raise RuntimeError('Synchronisez le corpus dans l’onglet Corpus JSON.')
-    return {'path':info['data'],'corpus_id':catalog()['id'],
+    local=inspect_local(lab,suite)
+    if local['state']!='verified':raise RuntimeError('Prepare the corpus in the JSON Corpus tab.')
+    info=remote_probe(ssh,remote_name,local['digest'],deep=True,suite=suite)
+    if info['state']!='verified':raise RuntimeError('Sync the corpus from the JSON Corpus tab.')
+    return {'path':info['data'],'corpus_id':catalog(suite)['id'],'suite':suite,
             'archive_sha256':local['digest'],'file_count':local['count']}

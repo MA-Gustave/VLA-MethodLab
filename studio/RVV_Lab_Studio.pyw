@@ -170,15 +170,15 @@ class Studio:
         ttk.Label(identity,text='LAB STUDIO   •   simdjson 5.0.3   •   RISC-V RVV 1.0',
                   style='Eyebrow.TLabel').pack(anchor='w',pady=(1,0))
         ttk.Label(header,textvariable=self.local_clock,style='Muted.TLabel').pack(side='right',padx=(12,0))
-        self.connect_btn=ttk.Button(header,text='Connecter SSH',command=self.connect,style='Accent.TButton')
+        self.connect_btn=ttk.Button(header,text='Connect SSH',command=self.connect,style='Accent.TButton')
         self.connect_btn.pack(side='right',padx=(8,0))
-        self.disconnect_btn=ttk.Button(header,text='Déconnecter',command=self.disconnect,state='disabled')
+        self.disconnect_btn=ttk.Button(header,text='Disconnect',command=self.disconnect,state='disabled')
         self.disconnect_btn.pack(side='right')
 
         context=ttk.Frame(main,style='Surface.TFrame',padding=(14,11))
         context.pack(fill='x',pady=(0,12))
         ttk.Label(context,text='MACHINE',style='PanelCaption.TLabel').pack(side='left',padx=(0,14))
-        for name,title in (('Cloud-V','Cloud-V  •  RVV natif'),('EPCC','EPCC  •  Slurm')):
+        for name,title in (('Cloud-V','Cloud-V  •  Native RVV'),('EPCC','EPCC  •  Slurm')):
             group=ttk.Frame(context,style='Surface.TFrame')
             group.pack(side='left',padx=(0,20))
             ttk.Radiobutton(group,text=title,variable=self.machine_choice,value=name,
@@ -195,9 +195,9 @@ class Studio:
         self.simple_tests_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,15))
         notebook.add(self.simple_tests_tab,text='   Tests   ')
         self.corpus_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,12))
-        notebook.add(self.corpus_tab,text='   Corpus JSON   ')
+        notebook.add(self.corpus_tab,text='   JSON Corpus   ')
         self.advanced_tab=ttk.Frame(notebook,style='App.TFrame',padding=(5,12))
-        notebook.add(self.advanced_tab,text='   Outils avancés   ')
+        notebook.add(self.advanced_tab,text='   Advanced tools   ')
 
         # Keep all existing specialist views, but do not duplicate the primary
         # workflow in competing top-level tabs.
@@ -213,10 +213,10 @@ class Studio:
         ttk.Entry(profile,textvariable=self.vars['env_path']).grid(row=1,column=1,sticky='ew',padx=9)
         ttk.Button(profile,text='Parcourir',command=self.browse_env).grid(row=1,column=2)
         ttk.Button(profile,text='Ouvrir .env',command=self.edit_env).grid(row=1,column=3,padx=(7,0))
-        ttk.Button(profile,text='Préparer un profil EPCC',command=self.prepare_epcc_env).grid(
+        ttk.Button(profile,text='Prepare EPCC profile',command=self.prepare_epcc_env).grid(
             row=2,column=1,sticky='w',pady=(10,0))
         ttk.Label(profile,text='La connexion active et les tests distants ne sont jamais '
-             'modifiés par une actualisation du statut.',style='Muted.TLabel').grid(
+             'modified by a status refresh.',style='Muted.TLabel').grid(
              row=3,column=0,columnspan=4,sticky='w',pady=(20,0))
 
         self.tabs=[]
@@ -686,7 +686,7 @@ class Studio:
         threading.Thread(target=self._storage_worker,args=(worker,remote,*args),daemon=True).start()
 
     def storage_refresh_list(self):
-        self._storage_start('Metric de l’espace serveur…','inventory')
+        self._storage_start('Checking server disk space…','inventory')
 
     def storage_sync_selected(self):
         run=self._storage_selected()
@@ -808,7 +808,7 @@ class Studio:
         self._append(self.storage_output, 'Disk RVV Lab : '+self._human_bytes(data['disk_free'])+' libres / '
                      +self._human_bytes(data['disk_total'])+' au total. '
                      +str(len(self.storage_rows))+' campaigns.\n')
-        self.storage_status.set(self._human_bytes(data['disk_free'])+' libres sur RVV Lab — '
+        self.storage_status.set(self._human_bytes(data['disk_free'])+' free on RVV Lab — '
                                 +str(len(self.storage_rows))+' campaigns')
 
     def browse_env(self):
@@ -867,7 +867,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
         previous=getattr(self,'active_profile','Cloud-V')
         if TARGET and target!=TARGET:
             self.machine_choice.set(TARGET)
-            messagebox.showwarning('Instance dédiée', 'Cette fenêtre est réservée à '+TARGET+'. Utilisez le second lanceur.')
+            messagebox.showwarning('Dedicated instance', 'This window is reserved for '+TARGET+'. Use the other launcher.')
             return
         if target==previous:return
         if (self.connecting or self.job_busy or self.storage_busy or self.night_busy or
@@ -884,7 +884,7 @@ RVVLAB_JUMP_ALLOW_AGENT=1
             if not guard.acquire(target):
                 guard.acquire(previous)
                 self.machine_choice.set(previous)
-                messagebox.showwarning('Machine déjà ouverte',target+' est déjà contrôlé par une autre instance.')
+                messagebox.showwarning('Machine already open',target+' is already controlled by another instance.')
                 return
         # Save edits made in the outgoing profile before switching.
         self.machine_envs[previous]=self.vars['env_path'].get().strip()
@@ -1351,8 +1351,8 @@ def main():
     guard=MachineLock()
     if not guard.acquire(chosen):
         popup=tk.Tk();popup.withdraw()
-        try:messagebox.showwarning('Lab Studio déjà ouvert',
-              'Une fenêtre pilote déjà '+chosen+'. Ouvrez le lanceur de l’autre machine.')
+        try:messagebox.showwarning('Lab Studio already open',
+              'A window already controls '+chosen+'. Open the other machine launcher.')
         finally:popup.destroy()
         return
     root=None

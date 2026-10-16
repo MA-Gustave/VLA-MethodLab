@@ -83,8 +83,8 @@ def discover_epcc_runs(ssh, remote_name, *, limit=75):
                 # A marker alone does not establish a completed experiment.
                 if state=='completed' and (not packet or rows_count==0):state='unknown'
                 if not state:state='unknown'
-                proof=('Archive disponible sur EPCC; état '+state if packet else
-                       'Pas d’archive de résultats; état '+state)
+                proof=('Archive available on EPCC; status '+state if packet else
+                       'No result archive; status '+state)
                 rows.append({'id':name,'kind':kind,'test_id':cfg['test_id'],'state':state,
                              'rows':rows_count,'observations':rows_count,
                              'packet':packet,'proof':proof,'workdir':path,
@@ -118,15 +118,15 @@ def _check_zip(path, cfg):
     with zipfile.ZipFile(path) as z:
         names=z.namelist()
         if len(set(names))!=len(names) or not set(cfg['required']).issubset(names):
-            raise ValueError('Archive incomplète ou noms dupliqués')
+            raise ValueError('Incomplete archive or duplicate filenames')
         if not set(names).issubset(cfg['allowed']):
             raise ValueError('Archive contenant des fichiers inattendus')
         total=0
         for info in z.infolist():
             if info.is_dir() or info.file_size>MAX_EXTRACTED_BYTES:
-                raise ValueError('Entrée ZIP non conforme')
+                raise ValueError('Unsafe ZIP entry')
             total+=info.file_size
-            if total>MAX_EXTRACTED_BYTES:raise ValueError('Archive décompressée trop volumineuse')
+            if total>MAX_EXTRACTED_BYTES:raise ValueError('Extracted archive exceeds size limit')
         bad=z.testzip()
         if bad:raise ValueError('CRC ZIP invalide : '+bad)
 
@@ -138,7 +138,7 @@ def sync_epcc_run(ssh,remote_name,run_id,local_root):
     required files and bounded decompression. Writes SYNC_OK only at the end.
     """
     kind=next((name for name,cfg in RUN_TYPES.items() if cfg['pattern'].fullmatch(str(run_id))),None)
-    if kind is None:raise ValueError('Identifiant EPCC inconnu : '+str(run_id))
+    if kind is None:raise ValueError('Unknown EPCC identifier : '+str(run_id))
     cfg=RUN_TYPES[kind]
     root=ssh.base(remote_name)+'/'+cfg['directory']+'/'+run_id
     remote=root+'/'+cfg['archive']
@@ -163,8 +163,8 @@ def sync_epcc_run(ssh,remote_name,run_id,local_root):
         got=_sha256(part)
         remote_hash=ssh.exec_text('sha256sum '+shlex.quote(remote)).strip().split()[0].lower()
         if not re.fullmatch(r'[0-9a-f]{64}',remote_hash) or remote_hash!=got:
-            raise RuntimeError('SHA256 EPCC différent du téléchargement')
-        if expected and expected!=got:raise RuntimeError('SHA256 du manifeste distant différent')
+            raise RuntimeError('EPCC SHA-256 does not match downloaded file')
+        if expected and expected!=got:raise RuntimeError('Remote manifest SHA-256 mismatch')
         _check_zip(part,cfg)
         # Commit the fully verified archive first, then extract through bounded
         # per-file temp copies. Do not let ZIP paths dictate the destination.

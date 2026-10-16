@@ -46,7 +46,7 @@ def readable_test(row):
         return 'Test 91 — Compositions'
     if 'holdoutvalidation2h' in name:return 'Test 90 — Holdout 2h'
     if 'prequalcorrected' in name:return 'Test 89 — Pilote 1h'
-    return 'Non identifié'
+    return 'Unidentified'
 
 
 # RVVLAB_UI_20261013 — Compact, transparent time display; original IDs stay intact.
@@ -95,12 +95,12 @@ def campaign_elapsed(row,now=None):
 
 def campaign_state(row):
     state=str(row.get('state') or '').lower()
-    if state in ('completed','complete','finished','done','stopped'):return '🟢 Terminé' if row.get('validated') and row.get('packet') else 'Finished'
+    if state in ('completed','complete','finished','done','stopped'):return '🟢 Completed' if row.get('validated') and row.get('packet') else 'Finished'
     if state in ('building','build','preparing','running','exploring','train','holdout'):return '🟡 '+('Compilation' if state in ('building','build','preparing') else 'En cours')
-    if state in ('failed','safety_stop'):return '🔴 Échec'
-    if state=='unknown':return 'À vérifier'
+    if state in ('failed','safety_stop'):return '🔴 Failed'
+    if state=='unknown':return 'Needs verification'
     if state=='building':return 'Compilation'
-    if state in ('queued','pending'):return 'En attente'
+    if state in ('queued','pending'):return 'Pending'
     if state in TERMINAL:return state.replace('_',' ').title()
     if state in ('starting','launch_incomplete','preflight'):return 'Starting'
     return 'Running' if state else 'Unknown'
@@ -292,7 +292,7 @@ class UnifiedCampaigns:
         self._set_rows(self.history_rows)
 
     def apply_verified_campaigns(self,profile,data,processes):
-        '''Display the same 94/95/96/97 status already read for Tests simples.'''
+        '''Display the same 94/95/96/97 status already read for Tests.'''
         if self.studio.active_profile!=profile:return
         entries=[]
         for number,items in (data or {}).items():
@@ -366,7 +366,7 @@ class UnifiedCampaigns:
             messagebox.showwarning('SSH','Connecte Studio avant toute action.');return
         if action=='stop':
             if self.by_id.get(runid,{}).get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
-                messagebox.showinfo('Slurm', 'Aucun arrêt EPCC automatique : utilisez les outils Slurm après vérification manuelle.');return
+                messagebox.showinfo('Slurm', 'EPCC runs cannot be stopped automatically here. Check the job and use Slurm tools.');return
             if self._selected_state() in TERMINAL:
                 messagebox.showinfo('Campaign','This campaign has already finished.');return
             if not messagebox.askyesno('Confirm graceful stop',
@@ -376,17 +376,17 @@ class UnifiedCampaigns:
         chosen=self.by_id.get(runid,{})
         if action=='sync' and chosen.get('kind') in ('test94','test96','test94-cloudv','test95','test97','test98'):
             if chosen.get('state')!='completed' or not chosen.get('validated') or not chosen.get('packet'):
-                messagebox.showinfo('Résultat indisponible','La campagne doit être terminée et validée pour être téléchargée.')
+                messagebox.showinfo('Result unavailable','The run must be completed and validated before Download.')
                 return
             simple=getattr(self.studio,'simple_tests',None)
             if simple is None:
-                messagebox.showerror('Tests simples','Utilisez Tests simples pour récupérer cette campagne.')
+                messagebox.showerror('Tests','Use the Tests tab to download this run.')
                 return
             number=re.search(r'test(\d+)',str(chosen['kind'])).group(1)
             if simple.profile!=self.studio.active_profile:simple.profile_changed()
             if not simple.remote_checked or not any(x.get('id')==runid for x in simple.runs.get(number,[])):
                 simple.refresh()
-                messagebox.showinfo('Vérification','Vérification serveur lancée. Réessayez Sync results dans quelques secondes.')
+                messagebox.showinfo('Verification','Server check started. Retry Sync results in a few seconds.')
                 return
             simple.tree.selection_set(number)
             simple.selection.set(runid)
@@ -413,7 +413,7 @@ class UnifiedCampaigns:
                     entry=self.by_id.get(runid,{})
                     if entry.get('kind') in ('test94','test96','test97') and self.studio.active_profile=='EPCC':
                         if not entry.get('packet'):
-                            raise RuntimeError('Aucune archive ZIP distante confirmée pour ce test (consulter les journaux).')
+                            raise RuntimeError('Aucune archive ZIP distante confirmede pour ce test (consulter les journaux).')
                         path=sync_epcc_run(self.studio.ssh,remote,runid,root)
                     else:path=sync_results(self.studio.ssh,remote,runid,root)
                     self.events.put(('info','SHA256-verified results synced: '+str(path)))
@@ -438,7 +438,7 @@ class UnifiedCampaigns:
             p=(simple._packet_dir(n,run['id']) if simple else
                Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/run['test_id'])
             if not p.exists():
-                messagebox.showinfo('Results','Ce résultat EPCC n’a pas encore été téléchargé.');return
+                messagebox.showinfo('Results','This EPCC result has not been downloaded yet.');return
         else:p=Path(self.studio.vars['results'].get()).expanduser()/'NightRuns'
         p.mkdir(parents=True,exist_ok=True)
         import os

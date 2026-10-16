@@ -91,7 +91,7 @@ class EpccResultsTests(unittest.TestCase):
         path=BASE+'/test96-epcc-runs/'+RUN+'/test96_results.sha256'
         data[path]=('f'*64+'  test96_results.zip\n').encode()
         with tempfile.TemporaryDirectory() as t:
-            with self.assertRaisesRegex(RuntimeError,'manifeste'):
+            with self.assertRaisesRegex(RuntimeError,'manifest'):
                 sync_epcc_run(FakeSSH(data),'rvvlab-v5',RUN,t)
             dest=Path(t)/'TestRunner'/'test96-epcc-8h'/('EPCC-'+RUN)
             self.assertFalse((dest/'SYNC_OK.txt').exists())
@@ -152,7 +152,7 @@ class EpccResultsTests(unittest.TestCase):
 
     def test_rejects_unrecognized_remote_id(self):
         with tempfile.TemporaryDirectory() as t:
-            with self.assertRaisesRegex(ValueError,'inconnu'):
+            with self.assertRaisesRegex(ValueError,'Unknown'):
                 sync_epcc_run(FakeSSH({}),'rvvlab-v5','not-a-run',t)
 
 

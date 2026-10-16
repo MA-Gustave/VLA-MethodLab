@@ -77,7 +77,7 @@ class SharedCorpusTests(unittest.TestCase):
     def test_remote_absent_cannot_be_claimed_verified(self):
         d=svc.inspect_local(self.lab)['digest']
         self.assertEqual(svc.remote_probe(self.ssh,'rvvlab-v5',d)['state'],'absent')
-        with self.assertRaisesRegex(RuntimeError,'Synchronisez'):
+        with self.assertRaisesRegex(RuntimeError,'Sync the corpus'):
             svc.require_remote(self.ssh,'rvvlab-v5',self.lab)
     def test_sync_pinned_corpus_and_reuse_without_reupload(self):
         s=svc.sync_remote(self.ssh,'rvvlab-v5',self.lab)
@@ -94,7 +94,7 @@ class SharedCorpusTests(unittest.TestCase):
         s=svc.sync_remote(self.ssh,'rvvlab-v5',self.lab)
         self.ssh.resolve(s['archive']).write_bytes(b'altered')
         self.assertEqual(svc.remote_probe(self.ssh,'rvvlab-v5',s['digest'])['state'],'invalid')
-        with self.assertRaisesRegex(RuntimeError,'Synchronisez'):
+        with self.assertRaisesRegex(RuntimeError,'Sync the corpus'):
             svc.require_remote(self.ssh,'rvvlab-v5',self.lab)
     def test_corrupted_extracted_json_fails_deep_validation(self):
         s=svc.sync_remote(self.ssh,'rvvlab-v5',self.lab)
@@ -104,7 +104,7 @@ class SharedCorpusTests(unittest.TestCase):
     def test_tamper_local_archive_fails_closed(self):
         svc.archive_path(self.lab).write_bytes(b'bad zip')
         self.assertEqual(svc.inspect_local(self.lab)['state'],'invalid')
-        with self.assertRaisesRegex(RuntimeError,'invalide'):
+        with self.assertRaisesRegex(RuntimeError,'Invalid'):
             svc.prepare_local(self.lab)
     def test_trusted_manifest_can_require_shared_corpus(self):
         from rvvlab_test_runner import discover

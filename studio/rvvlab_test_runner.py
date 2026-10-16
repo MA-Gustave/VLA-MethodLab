@@ -88,7 +88,12 @@ def discover(folder: Path):
             manual_only=doc.get('manual_only',False)
             if not isinstance(manual_only,bool):raise ValueError('manual_only must be boolean')
             requires_shared=doc.get('requires_shared_corpus',False)
-            if not isinstance(requires_shared,bool):raise ValueError('requires_shared_corpus must be boolean')
+            valid_suites=('performance','conformance','stress')
+            if isinstance(requires_shared,list):
+                if not requires_shared or len(requires_shared)>3 or any(type(x) is not str or x not in valid_suites for x in requires_shared) or len(set(requires_shared))!=len(requires_shared):
+                    raise ValueError('requires_shared_corpus list must contain 1-3 distinct suite names')
+            elif type(requires_shared) is not bool and (type(requires_shared) is not str or requires_shared not in valid_suites):
+                raise ValueError('requires_shared_corpus must be boolean, suite name, or suite list')
             found.append({'id': name, 'title': title, 'enabled': enabled, 'manual_only':manual_only,
                           'params': params, 'requires_shared_corpus':requires_shared, 'manifest_path': manifest_path,
                           'script_path': script_path, 'manifest_sha': sha256(manifest_path),
@@ -200,11 +205,11 @@ class TestContext:
         if self.remote_name != 'rvvlab-v5':
             raise RuntimeError('Refused: runner only permitted in rvvlab-v5')
 
-    def shared_json_corpus(self):
+    def shared_json_corpus(self,suite='performance'):
         """Find verified shared JSON data on current target, without modifying protocols."""
         self.ensure_connected()
         from rvvlab_corpus_service import require_remote
-        return require_remote(self.ssh,self.remote_name)
+        return require_remote(self.ssh,self.remote_name,suite=suite)
 
     def sync_stopped_night(self,run_id):
         if not RUN_RE.fullmatch(str(run_id)):
@@ -327,10 +332,14 @@ def run_trial(item,studio,result_root,emit,stop_event):
     if item.get('requires_shared_corpus'):
         # Optional, fail-closed preflight for ANY future trusted test manifest.
         # Never change 81-97's fixed historical corpora implicitly.
-        corpus=ctx.shared_json_corpus()
+        requested=item['requires_shared_corpus']
+        suites=requested if isinstance(requested,list) else [requested if isinstance(requested,str) else 'performance']
+        corpora=[ctx.shared_json_corpus(suite) for suite in suites]
+        # Keep the historic single-object results format for Test98 and boolean manifests.
         (out/'shared_corpus_used.json').write_text(
-            json.dumps(corpus,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-        logger('SHARED_CORPUS_VERIFIED '+corpus['corpus_id']+' '+corpus['archive_sha256'])
+            json.dumps(corpora if len(corpora)>1 else corpora[0],indent=2,sort_keys=True)+'\n',encoding='utf-8')
+        for corpus in corpora:
+            logger('SHARED_CORPUS_VERIFIED '+corpus['corpus_id']+' '+corpus['archive_sha256'])
     spec=importlib.util.spec_from_file_location('rvvlab_trial_'+re.sub(r'\W','_',item['id']),script_path)
     if spec is None or spec.loader is None:raise RuntimeError('Could not load script')
     mod=importlib.util.module_from_spec(spec)
@@ -448,7 +457,7 @@ class TestRunnerPanel:
         tree.tag_configure('live_ok',background='#D9F6E4',foreground='#135C3E')
         tree.tag_configure('live_failed',background='#FDE2E2',foreground='#9B1C1C')
         tree.tag_configure('live_pending',background='#F6F0D5',foreground='#795000')
-        for col,heading,width in [('title','Test',420),('script','Local script',225),('status','État distant',290)]:
+        for col,heading,width in [('title','Test',420),('script','Local script',225),('status','Remote status',290)]:
             tree.heading(col,text=heading);tree.column(col,width=width,anchor='w')
         vbar=ttk.Scrollbar(treebox,orient='vertical',command=tree.yview)
         hbar=ttk.Scrollbar(treebox,orient='horizontal',command=tree.xview)
@@ -531,9 +540,9 @@ class TestRunnerPanel:
             if profile not in allowed:
                 label,tag='— Autre machine',''
             elif self.verification_error:
-                label,tag='⚠ Serveur non vérifié','live_pending'
+                label,tag='⚠ Serveur non verified','live_pending'
             elif self.verified_profile != profile:
-                label,tag='○ En attente vérification',''
+                label,tag='○ Pending verification',''
             else:
                 rows=self.verified_campaigns.get(n,[])
                 row=rows[0] if rows else None
@@ -542,27 +551,27 @@ class TestRunnerPanel:
                 if row:
                     state=str(row.get('state','')).lower()
                     if state=='completed' and row.get('validated') and row.get('packet'):
-                        label,tag='🟢 Terminé — ZIP prêt','live_ok'
+                        label,tag='🟢 Completed — ZIP ready','live_ok'
                     elif state in ('failed','safety_stop'):
-                        label,tag='🔴 Échec distant','live_failed'
+                        label,tag='🔴 Remote failure','live_failed'
                     elif state in ACTIVE or state=='preparing' or (state=='unconfirmed' and process):
                         label,tag='🟡 '+('Compilation' if state in ('building','build','preparing','unconfirmed') else 'En cours'),'live_active'
                     elif state=='incomplete':
-                        label,tag='⚠ Résultats incomplets','live_pending'
+                        label,tag='⚠ Incomplete results','live_pending'
                     else:
-                        label,tag='⚠ État à vérifier','live_pending'
+                        label,tag='⚠ Unverified status','live_pending'
                 elif process:
                     label,tag='🟡 Processus distant actif','live_active'
                 elif self.busy and getattr(self.studio,'simple_tests',None) is not None and self.studio.simple_tests.launch_number==n:
-                    label,tag='🟡 Préparation Studio','live_active'
+                    label,tag='🟡 Preparation Studio','live_active'
                 elif local and local.get('state')=='failed_local':
-                    label,tag='🔴 Échec local','live_failed'
+                    label,tag='🔴 Local failure','live_failed'
                 elif local and local.get('state')=='started_local':
-                    label,tag='⚠ Aucun processus confirmé','live_pending'
+                    label,tag='⚠ Aucun processus confirmed','live_pending'
                 else:
-                    label,tag='— Aucun lancement distant',''
+                    label,tag='— No launch distant',''
             if row and row.get('rows') and tag in ('live_ok','live_active'):
-                label+=f" · {row['rows']} mesures"
+                label+=f" · {row['rows']} measurements"
             self.tree.set(iid,'status',label)
             self.tree.item(iid,tags=(tag,) if tag else ())
         self._highlight_selection()
@@ -628,7 +637,7 @@ class TestRunnerPanel:
         mismatch=[x['title'] for x in items if manifest_target(x['id']) is not None and
                   self.studio.active_profile not in manifest_target(x['id'])[1]]
         if mismatch:
-            messagebox.showerror('Mauvaise machine','Test(s) destinés à une autre machine : '+', '.join(mismatch))
+            messagebox.showerror('Wrong machine','Tests targeted at another machine: '+', '.join(mismatch))
             return False
         desc='\n'.join(f'{i+1}. {display_test_title(x)} — {x["script_path"].name} [{x["script_sha"][:12]}]' for i,x in enumerate(items))
         return messagebox.askyesno('Run trusted scripts',
@@ -675,7 +684,7 @@ class TestRunnerPanel:
             messagebox.showerror('Test 94','Test94 manifest not installed in Test Runner folder.');return
         if self.studio.active_profile=='EPCC' and not self.epcc_nodes:
             self.detect_epcc_nodes()
-            messagebox.showinfo('EPCC nodes','Vérification Slurm en cours. Le nœud RVV disponible sera choisi automatiquement. Relancez la sélection une fois la détection terminée.')
+            messagebox.showinfo('EPCC nodes','Checking Slurm nodes. An available RVV node will be selected automatically; retry after the check.')
             return
         if self._approval([item]):self._run([item])
 
@@ -769,16 +778,16 @@ class TestRunnerPanel:
         managed=[x for x in selection if manifest_target(x['id']) is not None]
         if managed:
             if len(selection)!=1:
-                messagebox.showwarning('Tests isolés',
+                messagebox.showwarning('Isolated tests',
                     'Lancez les Tests 94/95/96/97 un par un. Une file multiple est interdite.');return
             number,allowed=manifest_target(managed[0]['id'])
             if self.studio.active_profile not in allowed:
-                messagebox.showerror('Mauvaise machine',
-                    'Le Test '+number+' ne correspond pas à '+self.studio.active_profile+'.');return
+                messagebox.showerror('Wrong machine',
+                    'The Test '+number+' does not match '+self.studio.active_profile+'.');return
             simple=getattr(self.studio,'simple_tests',None)
             if simple is None:
                 messagebox.showerror('Tests simples',
-                    'Le contrôle anti-doublon distant est indisponible. Lancement refusé.');return
+                    'Remote duplicate-run guard is unavailable. Launch blocked.');return
             if simple.profile != self.studio.active_profile:simple.profile_changed()
             simple.tree.selection_set(number)
             simple._selected()

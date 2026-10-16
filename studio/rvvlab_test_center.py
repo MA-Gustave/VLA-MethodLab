@@ -56,7 +56,7 @@ def local_state(item,root,history=None):
     directories=_dirs(base)
     latest=directories[0] if directories else None
     history=(history or {}).get(identifier,{})
-    result={'test_id':identifier,'state':'unknown','proof':'Aucun résultat local vérifié',
+    result={'test_id':identifier,'state':'unknown','proof':'No verified local result',
             'downloaded':False,'directory':str(latest) if latest else '',
             'run_id':'','checked':'Local uniquement'}
     if latest:
@@ -69,7 +69,7 @@ def local_state(item,root,history=None):
                 if not folder.name.startswith('EPCC-'+run_prefix):continue
                 if (folder/'SYNC_OK.txt').is_file() and (folder/('test94_results.zip' if identifier==TEST94_KEY else 'test96_results.zip' if identifier==TEST96_KEY else 'test97_results.zip' if identifier==TEST97_KEY else 'test98_results.zip')).is_file():
                     result.update(state='downloaded',downloaded=True,
-                                  proof='Archive EPCC vérifiée SHA256 sur PC',
+                                  proof='Archive EPCC verifiede SHA256 sur PC',
                                   directory=str(folder),run_id=folder.name[5:])
                     return result
 
@@ -80,33 +80,33 @@ def local_state(item,root,history=None):
             if packets:
                 chosen=packets[0]
                 result.update(state='downloaded',downloaded=True,
-                    proof='Archive Test 94 présente sur le PC (SHA256 à vérifier dans le journal de récupération)',
+                    proof='Test 94 archive present on PC (check SHA-256 in recovery log)',
                     directory=str(chosen.parent))
                 return result
             for d in directories:
                 status=_json(d/'status_pc94.json')
                 if status.get('verified'):
-                    result.update(state=str(status.get('state') or 'unknown').lower(),proof='Dernier état distant enregistré (cache)',
+                    result.update(state=str(status.get('state') or 'unknown').lower(),proof='Last recorded remote status (cached)',
                                   directory=str(d),run_id=status.get('run_id') or '')
                     return result
             if (latest/'launch94.json').exists():
-                result.update(state='unknown',proof='Lancement connu, état serveur à vérifier')
+                result.update(state='unknown',proof='Known launch, remote status needs verification')
                 return result
         if (latest/'result.json').exists():
-            result.update(state='local_pass',proof='Script terminé ; fin distante non prouvée')
+            result.update(state='local_pass',proof='Script finished; remote completion unproven')
         elif (latest/'runner.log').exists():
             try:
                 tail=(latest/'runner.log').read_bytes()[-2000:].decode('utf8','replace')
                 if 'FAIL ' in tail or 'Traceback' in tail:
-                    result.update(state='failed',proof='Échec signalé dans le journal local')
-                else:result.update(state='unknown',proof='Journal local, résultat final non confirmé')
+                    result.update(state='failed',proof='Failure reported in local log')
+                else:result.update(state='unknown',proof='Local log only; final result unconfirmed')
             except OSError:pass
     if history.get('state')=='PASS' and result['state']=='unknown':
         result.update(state='local_pass',proof='Historique PASS local seulement')
     if identifier not in (TEST94_KEY,TEST96_KEY,TEST97_KEY,TEST98_KEY) and result['run_id']:
         night=root/'NightRuns'/result['run_id']
         if (night/'SYNC_OK.txt').is_file():
-            result.update(state='downloaded',downloaded=True,proof='Snapshot NightRuns synchronisé et SHA256 vérifié',directory=str(night))
+            result.update(state='downloaded',downloaded=True,proof='NightRuns snapshot synced and SHA-256 verified',directory=str(night))
     return result
 
 
@@ -160,27 +160,27 @@ def merge(local,remote=None):
     merged=dict(local)
     if remote is not None:
         if local['downloaded']:
-            merged['proof']=local['proof']+' · Dernier état distant : '+str(remote.get('state') or 'inconnu')
+            merged['proof']=local['proof']+' · Latest remote status: '+str(remote.get('state') or 'unknown')
             if str(remote.get('id') or '')!=str(merged.get('run_id') or ''):
-                merged['proof']+=' · Autre exécution sur EPCC : '+str(remote.get('id'))
-            merged['checked']='Serveur vérifié'
+                merged['proof']+=' · Another EPCC run: '+str(remote.get('id'))
+            merged['checked']='Serveur verified'
             return merged
         remote_result=remote_state(remote)
         if remote_result!='unknown':
             merged['state']='downloaded' if remote_result=='completed' and local['downloaded'] else remote_result
-            merged['proof']=str(remote.get('proof') or ('Serveur confirmé : '+str(remote.get('state') or '?')))
+            merged['proof']=str(remote.get('proof') or ('Serveur confirmed : '+str(remote.get('state') or '?')))
         elif not local['downloaded']:
             merged['state']='unknown'
-            merged['proof']=str(remote.get('proof') or 'État serveur non confirmé : nouvelle vérification nécessaire')
+            merged['proof']=str(remote.get('proof') or 'Remote status unconfirmed; repeat verification')
         merged['run_id']=str(remote.get('id') or merged['run_id'])
-        merged['checked']='Serveur vérifié'
+        merged['checked']='Serveur verified'
     return merged
 
 
 def label(state):
-    return {'downloaded':'TÉLÉCHARGÉ','completed':'TERMINÉ · distant','running':'EN COURS',
-            'queued':'EN ATTENTE','building':'COMPILATION EPCC','failed':'ÉCHEC','stopped':'ARRÊTÉ · partiel',
-            'local_pass':'PASS local (à vérifier)','unknown':'À VÉRIFIER'}.get(state,'À VÉRIFIER')
+    return {'downloaded':'DOWNLOADED','completed':'COMPLETED · remote','running':'RUNNING',
+            'queued':'QUEUED','building':'COMPILATION EPCC','failed':'FAILED','stopped':'STOPPED · partial',
+            'local_pass':'PASS local (needs verification)','unknown':'NEEDS CHECK'}.get(state,'NEEDS CHECK')
 
 
 def inspect_remote_94(ssh,remote_name,profile):
@@ -214,7 +214,7 @@ def inspect_remote_94(ssh,remote_name,profile):
             found.append({'id':name,'state':str(d.get('state') or 'unknown').lower(),
                           'rows':d.get('rows',0),'packet':packet,'path':path})
     finally:client.close()
-    if not found:return {'state':'unknown','id':'','proof':'Aucun Test94 distant trouvé','packet':False}
+    if not found:return {'state':'unknown','id':'','proof':'No remote Test 94 found','packet':False}
     from rvvlab_epcc94_diagnostics import pre_slurm_diagnosis
     active={}
     if profile=='EPCC':
@@ -230,15 +230,15 @@ def inspect_remote_94(ssh,remote_name,profile):
     for row in found:
         st=active.get(row['path'],'')
         if st in ('RUNNING','COMPLETING'):
-            row.update(state='running',proof='Processus / Slurm actif confirmé');return row
+            row.update(state='running',proof='Processus / Slurm actif confirmed');return row
         if st in ('PENDING','CONFIGURING','SUSPENDED'):
-            row.update(state='queued',proof='En attente Slurm confirmé');return row
+            row.update(state='queued',proof='Pending Slurm confirmed');return row
     for row in found:
         if row['state']=='completed' and row['packet'] and isinstance(row['rows'],int) and row['rows']>0:
-            row['proof']='État completed + mesures + archive distante';return row
+            row['proof']='Completed state, measurements and remote archive';return row
     last=found[0]
     if last['state'] in ('failed','safety_stop'):
-        last.update(state='failed',proof='Échec distant enregistré');return last
+        last.update(state='failed',proof='Recorded remote failure');return last
     if profile=='EPCC':
         # Re-open SFTP only after process/squeue inspection, not while the
         # previous handle is held (some EPCC gateways limit SFTP sessions).
@@ -247,5 +247,5 @@ def inspect_remote_94(ssh,remote_name,profile):
         try:state,proof=pre_slurm_diagnosis(sftp,last['path'],ps_text,last['state'])
         finally:sftp.close()
         last.update(state=state,proof=proof)
-    else:last.update(state='unknown',proof='Ancienne tentative sans fin validée')
+    else:last.update(state='unknown',proof='Old attempt without validated completion')
     return last

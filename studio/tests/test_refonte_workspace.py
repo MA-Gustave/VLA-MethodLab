@@ -32,7 +32,7 @@ class WorkspaceRefonteTests(unittest.TestCase):
 
     def test_two_spaces_and_historical_navigation(self):
         self.assertEqual(len(self.app.notebook.tabs()),3)
-        self.assertIn('Corpus JSON', self.app.notebook.tab(self.app.corpus_tab,'text'))
+        self.assertIn('JSON Corpus', self.app.notebook.tab(self.app.corpus_tab,'text'))
         self.assertEqual(len(self.app.advanced_notebook.tabs()),8)
         self.app.open_advanced(self.app.test_runner_tab)
         self.assertEqual(self.app.advanced_notebook.select(),str(self.app.test_runner_tab))
@@ -42,7 +42,7 @@ class WorkspaceRefonteTests(unittest.TestCase):
         self.app.active_profile='EPCC';self.panel.profile_changed()
         self.assertEqual(set(self.panel.tree.get_children()),{'94','96','97','98'})
         self.panel.tree.selection_set('97');self.panel._selected()
-        self.assertIn('3 heures',self.panel.test_descr.get())
+        self.assertIn('3 hours',self.panel.test_descr.get())
 
     def test_active_blocks_run_and_has_amber_state(self):
         self._ready('97',[dict(id='test97-20261015T120000Z-abc123',state='building',
