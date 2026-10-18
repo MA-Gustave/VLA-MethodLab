@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "campaign": "test103",
+  "purpose": "experimental Stage2 variants, unchanged original A2 reference",
+  "files": [
+    {
+      "path": "README_TEST103_OVERNIGHT.md",
+      "size": 5115,
+      "sha256": "41bc032f00173b0f5bc0f99c03a55c6ea78f39113707989a35abbee987eaf655"
+    },
+    {
+      "path": "studio/rvvlab_epcc_results.py",
+      "size": 12666,
+      "sha256": "83554bca749f2bcdc5befba33dfdeacec9b97af7c1e60364c85931fe9ea67f0e"
+    },
+    {
+      "path": "studio/rvvlab_simple_tests.py",
+      "size": 50377,
+      "sha256": "efe4c7dd46e1d25657bec7749ff09ae63942f5672ee60c92f2f8a9acfcfbf221"
+    },
+    {
+      "path": "studio/rvvlab_test103_download.py",
+      "size": 5082,
+      "sha256": "fbf13c88842018c4c0b0d024ca881be3c516f3610d267691e0224e71e46998d6"
+    },
+    {
+      "path": "studio/rvvlab_unified_campaigns.py",
+      "size": 25818,
+      "sha256": "4502f3ad80ede6d56e48a87e19c103a2d5f729e345bf1c764cd39ff253f34615"
+    },
+    {
+      "path": "studio/test_scripts/103_escape_stage.py",
+      "size": 15064,
+      "sha256": "c005e63c04d47919da65b46910a45f678a8a1094b30242d469b1ccc871866eab"
+    },
+    {
+      "path": "studio/test_scripts/103_escape_stage.test.json",
+      "size": 570,
+      "sha256": "84431ce2801351870304364362e9f0138c1d6f82e19c2077f264972c6ee43fda"
+    },
+    {
+      "path": "studio/tests/test100_adaptive_offline.py",
+      "size": 4595,
+      "sha256": "734dad9fa0274cd3b984ca47e82b90253d2a05bd26a90a667f425900329f897e"
+    },
+    {
+      "path": "studio/tests/test103_offline.py",
+      "size": 5179,
+      "sha256": "93ebf6e58d9ab9c0947652e0a12feae6c1325abf767bdecbbcdd9cbd81f3e2e3"
+    },
+    {
+      "path": "studio/tests/test_refonte_workspace.py",
+      "size": 3689,
+      "sha256": "f696d1b01bf1c7b5da01d1a3c496c923b89a7bbe2bcd5bea6d4baa8647f5442d"
+    },
+    {
+      "path": "tools/test103_cloudv.sh",
+      "size": 1290,
+      "sha256": "22ede94f649871d38ae5e35ccf69f6639f97b502120e6371c8ab87d639545f7b"
+    },
+    {
+      "path": "tools/test103_diagnostic.py",
+      "size": 2157,
+      "sha256": "0d21a4778698390e84eaddb278a0619440eaf32825f09d6ce1c8f814084f9a65"
+    },
+    {
+      "path": "tools/test103_epcc.sbatch",
+      "size": 1313,
+      "sha256": "c199a83b3d5c348073c648b17830aaae5e459f91f5dff3d3c2a11c10b55f29fa"
+    },
+    {
+      "path": "tools/test103_epcc_build.py",
+      "size": 776,
+      "sha256": "1b477139c0e77499e0385ca1c44b53d1f6a11d8f371dcfd5acd34eacd05a73d5"
+    },
+    {
+      "path": "tools/test103_native.py",
+      "size": 25509,
+      "sha256": "7f5cd37dd8c9606dc6ea8e7853854c6631aa7936df5a865d183a0aef10321b87"
+    },
+    {
+      "path": "tools/test103_split.cpp",
+      "size": 5720,
+      "sha256": "2ef88a44e63e9d6790d03768940a58f42e08edb06c6a7be622267b37ba181a25"
+    },
+    {
+      "path": "tools/test103_stage2_patch.py",
+      "size": 2350,
+      "sha256": "34ca6985311b9431931c38410d36b7029d3442d21be4539c6d0004ba65370c8a"
+    },
+    {
+      "path": "tools/test96_epcc_build.py",
+      "size": 3628,
+      "sha256": "87112096ef6fc6f6369093a010ce541fedb5a88369137d0b140053022fae20b3"
+    }
+  ]
+}

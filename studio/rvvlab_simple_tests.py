@@ -20,10 +20,10 @@ from tkinter import ttk, messagebox
 from rvvlab_test_runner import SCRIPTS_DIR, TestContext, discover
 from rvvlab_elapsed import elapsed_display
 
-PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC'), '99': ('Cloud-V','EPCC'), '100': ('Cloud-V','EPCC'), '101': ('Cloud-V','EPCC'), '102': ('Cloud-V','EPCC')}
+PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC'), '99': ('Cloud-V','EPCC'), '100': ('Cloud-V','EPCC'), '101': ('Cloud-V','EPCC'), '102': ('Cloud-V','EPCC'), '103': ('Cloud-V','EPCC'), '104': ('Cloud-V','EPCC')}
 TEST_IDS = {'94': 'machine-compare-94-1h', '95': 'test95-cloudv-8h',
             '96': 'test96-epcc-8h', '97': 'test97-cloudv-8h',
-            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus', '99': 'test99-public-8h', '100': 'test100-adaptive-public', '101': 'test101-dispatch-validation', '102': 'test102-escape-stage'}
+            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus', '99': 'test99-public-8h', '100': 'test100-adaptive-public', '101': 'test101-dispatch-validation', '102': 'test102-escape-stage', '103': 'test103-stage2-optimization','104':'test104-independent-public-validation'}
 
 
 def test_id(number, profile):
@@ -37,7 +37,7 @@ def manifest_target(manifest_id):
     """Return the test number and target restriction of a managed manifest."""
     if manifest_id == TEST_IDS['97-epcc']:
         return '97', ('EPCC',)
-    for number in ('94', '95', '96', '97', '98', '99', '100','101','102'):
+    for number in ('94', '95', '96', '97', '98', '99', '100','101','102','103','104'):
         if manifest_id == TEST_IDS[number]:
             allowed = ('Cloud-V',) if number == '97' else PROFILES[number]
             return number, allowed
@@ -52,9 +52,11 @@ RUN_PATTERN = {
     '100': re.compile(r'^test100-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '101': re.compile(r'^test101-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
     '102': re.compile(r'^test102-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '103': re.compile(r'^test103-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+    '104': re.compile(r'^test104-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
 }
-RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs', '98': 'test98-cloudv-runs', '99':'test99-cloudv-runs', '100':'test100-cloudv-runs', '101':'test101-cloudv-runs','102':'test102-cloudv-runs'}
-ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip', '98':'test98_results.zip', '99':'test99_results.zip', '100':'test100_results.zip', '101':'test101_results.zip','102':'test102_results.zip'}
+RUN_ROOT = {'95': 'test95-runs', '96': 'test96-epcc-runs', '97': 'test97-runs', '98': 'test98-cloudv-runs', '99':'test99-cloudv-runs', '100':'test100-cloudv-runs', '101':'test101-cloudv-runs','102':'test102-cloudv-runs','103':'test103-cloudv-runs','104':'test104-cloudv-runs'}
+ZIP_NAME = {'94': 'test94_results.zip', '95': 'test95_results.zip', '96': 'test96_results.zip', '97': 'test97_results.zip', '98':'test98_results.zip', '99':'test99_results.zip', '100':'test100_results.zip', '101':'test101_results.zip','102':'test102_results.zip','103':'test103_results.zip','104':'test104_results.zip'}
 TERMINAL = {'completed', 'failed', 'safety_stop', 'stopped'}
 ACTIVE = {'starting', 'preflight', 'building', 'build', 'queued', 'pending', 'running', 'exploring', 'train', 'holdout', 'repeat', 'preparing'}
 
@@ -79,7 +81,7 @@ def _has_file(sftp, path):
 
 def _server_runs(ssh, remote_name, number, profile):
     """Read-only, bounded inventory; do not assume a local Studio launch record."""
-    if profile == 'EPCC' and number in ('94', '96', '97','98','99','100','101','102'):
+    if profile == 'EPCC' and number in ('94', '96', '97','98','99','100','101','102','103','104'):
         from rvvlab_epcc_results import discover_epcc_runs
         kind = 'test'+number
         rows = []
@@ -137,7 +139,7 @@ def _server_runs(ssh, remote_name, number, profile):
             state = str(status.get('state') or '').lower()
             zipped = _has_file(sftp, path + '/' + ZIP_NAME[number])
             valid = status.get('validated') is True
-            if number in ('98','99','100','101','102'):
+            if number in ('98','99','100','101','102','103','104'):
                 count=status.get('rows',0)
                 valid=valid and type(count) is int and count>0
             if number == '96':
@@ -385,6 +387,10 @@ class SimpleTestsPanel:
            ('EPCC','98'):'18 pinned public JSON files · A2 vs official v5 · 1 hour via Slurm',
            ('EPCC','99'):'18 public JSON files · A2 4/6/8 KiB vs official · 8h via Slurm',
            ('Cloud-V','102'):'Escape density / internal Stage1 + Stage2 / overnight · 6h30 cap',
+           ('Cloud-V','103'):'Stage2 escape optimizations / paired RVV variants · overnight',
+           ('EPCC','103'):'Stage2 escape optimizations / paired RVV variants via Slurm',
+           ('Cloud-V','104'):'Independent public JSON + JSONTestSuite · verified performance / conformance',
+           ('EPCC','104'):'Independent external JSON validation + Stage2 variants via Slurm',
            ('EPCC','102'):'Escape density / Stage1 + Stage2 via Slurm · overnight',
            ('Cloud-V','101'):'A2 threshold confirmation · public + derived + boundaries · 6h cap',
            ('EPCC','101'):'A2 threshold confirmation via Slurm · public + derived + boundaries',
@@ -544,7 +550,7 @@ class SimpleTestsPanel:
                                   'No run found on '+self.profile+'.')
         else:self.details.set('Status unconfirmed. Refresh never starts a benchmark.')
         can_download=bool(self.studio.ssh.connected() and self.remote_checked and row and
-                          (row['state']=='completed' and row.get('validated') or n in ('100','101','102') and row['state'] in ('failed','stopped')) and row.get('packet'))
+                          (row['state']=='completed' and row.get('validated') or n in ('100','101','102','103','104') and row['state'] in ('failed','stopped')) and row.get('packet'))
         self.download_button.configure(state='normal' if can_download and not self.busy else 'disabled')
         run_blocked=(not self.studio.ssh.connected() or self.busy or self.poll_busy or self.studio.test_runner.busy or
                      self.last_check_error is not None or process_here or
@@ -647,14 +653,14 @@ class SimpleTestsPanel:
 
     def _packet_dir(self,number,runid):
         base=Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/test_id(number,self.profile)
-        if number in ('98','99','100','101','102') and self.profile=='Cloud-V':
+        if number in ('98','99','100','101','102','103','104') and self.profile=='Cloud-V':
             return base/('Cloud-V-'+runid)
-        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97','98','99','100','101','102') else 'simple-')+runid)
+        return base/(('EPCC-' if self.profile=='EPCC' and number in ('94','96','97','98','99','100','101','102','103','104') else 'simple-')+runid)
 
     def download(self):
         row=self._row();number=self._number()
         if not row or not number or self.busy or not self.studio.ssh.connected():return
-        if not (self.remote_checked and row['packet'] and ((row['state']=='completed' and row.get('validated')) or (number in ('100','101','102') and row['state'] in ('failed','stopped')))):
+        if not (self.remote_checked and row['packet'] and ((row['state']=='completed' and row.get('validated')) or (number in ('100','101','102','103','104') and row['state'] in ('failed','stopped')))):
             messagebox.showinfo('Not finished yet','Click Refresh. Download will be enabled once completion is validated.');return
         target=self._packet_dir(number,row['id'])
         self.busy=True;self._selected()
@@ -667,7 +673,7 @@ class SimpleTestsPanel:
                 # Recheck the SAME remote run before copying, not the newest run.
                 found=_server_runs(self.studio.ssh,remote_name,number,profile)
                 match=next((r for r in found if r['id']==run['id']),None)
-                if not match or not match.get('packet') or not ((match['state']=='completed' and match.get('validated')) or (number in ('100','101','102') and match['state'] in ('failed','stopped'))):
+                if not match or not match.get('packet') or not ((match['state']=='completed' and match.get('validated')) or (number in ('100','101','102','103','104') and match['state'] in ('failed','stopped'))):
                     raise RuntimeError('The selected run is no longer confirmed as completed.')
                 if number=='100' and profile=='Cloud-V':
                     # Preserve the existing Windows-safe Test100 downloader.
@@ -675,6 +681,18 @@ class SimpleTestsPanel:
                     packet=sync_cloudv_test100(
                         self.studio.ssh, remote_name, run['id'],
                         self.studio.vars['results'].get(), workdir=run['path'])
+                elif number=='104' and profile=='Cloud-V':
+                    from rvvlab_test104_download import sync_cloudv_test104
+                    packet=sync_cloudv_test104(
+                        self.studio.ssh, remote_name, run['id'],
+                        self.studio.vars['results'].get(), workdir=run['path'],
+                        expected_state='completed' if match['state']=='completed' else None)
+                elif number=='103' and profile=='Cloud-V':
+                    from rvvlab_test103_download import sync_cloudv_test103
+                    packet=sync_cloudv_test103(
+                        self.studio.ssh, remote_name, run['id'],
+                        self.studio.vars['results'].get(), workdir=run['path'],
+                        expected_state='completed' if match['state']=='completed' else None)
                 elif number=='102' and profile=='Cloud-V':
                     from rvvlab_test102_download import sync_cloudv_test102
                     packet=sync_cloudv_test102(
@@ -687,7 +705,7 @@ class SimpleTestsPanel:
                     packet=sync_cloudv_test101(
                         self.studio.ssh, remote_name, run['id'],
                         self.studio.vars['results'].get(), workdir=run['path'])
-                elif profile=='EPCC' and number in ('94','96','97','98','99','100','101','102'):
+                elif profile=='EPCC' and number in ('94','96','97','98','99','100','101','102','103','104'):
                     from rvvlab_epcc_results import sync_epcc_run
                     folder=sync_epcc_run(self.studio.ssh,remote_name,run['id'],
                                          self.studio.vars['results'].get())
@@ -697,7 +715,7 @@ class SimpleTestsPanel:
                     ctx=TestContext(self.studio,target,lambda x:self.events.put(('note',str(x))),
                                     threading.Event(),{'id':test_id(number,profile)})
                     ctx.ensure_connected()
-                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py','98':'98_real_corpus.py','99':'99_public_8h.py','100':'100_adaptive_public.py', '101':'101_dispatch_validation.py','102':'102_escape_stage.py'}[number]
+                    file={'94':'94_machine_1h.py','95':'95_cloudv_8h.py','96':'96_epcc_8h.py','97':'97_cloudv_8h.py','98':'98_real_corpus.py','99':'99_public_8h.py','100':'100_adaptive_public.py', '101':'101_dispatch_validation.py','102':'102_escape_stage.py','103':'103_escape_stage.py','104':'104_escape_stage.py'}[number]
                     path=SCRIPTS_DIR/file
                     if not path.is_file():raise RuntimeError('Recovery script missing: '+str(path))
                     spec=importlib.util.spec_from_file_location('rvvlab_simple_recovery_'+number,path)
@@ -706,7 +724,7 @@ class SimpleTestsPanel:
                         output=mod.recover(ctx,{'mode':profile,'id':run['id'],'workdir':run['path']})
                         packet=output.get('packet')
                     elif number in ('95','97'):packet=mod.grab(ctx,run['path'])
-                    elif number in ('98','99','100','101','102'):packet=mod.verified_archive(ctx,{'id':run['id'],'workdir':run['path']},'Cloud-V')
+                    elif number in ('98','99','100','101','102','103','104'):packet=mod.verified_archive(ctx,{'id':run['id'],'workdir':run['path']},'Cloud-V')
                     else:packet=mod.download(ctx,run['path'])
                 if not packet:raise RuntimeError('No ZIP archive downloaded.')
                 self.events.put(('download',(profile,number,run['id'],str(packet),None)))
@@ -766,11 +784,17 @@ class SimpleTestsPanel:
                             runner.apply_verified_campaigns(profile,data,self.remote_activity)
                         unified=getattr(self.studio,'unified_campaigns',None)
                         if unified is not None and hasattr(unified,'apply_verified_campaigns'):
-                            unified.apply_verified_campaigns(profile,data,self.remote_activity)
-                            # Second, sequential read: specialized historic/NightRuns
-                            # inventory. Same 60-second scheduler, no extra timer.
-                            if not unified.poll_busy and not unified.busy:
-                                unified.refresh_remote()
+                            # Campaign history is supplemental. A future test ID or
+                            # widget failure must not stop the main Tests event queue.
+                            try:
+                                unified.apply_verified_campaigns(profile,data,self.remote_activity)
+                                # Same 60-second scheduler, no secondary periodic poll.
+                                if not unified.poll_busy and not unified.busy:
+                                    unified.refresh_remote()
+                            except Exception as ex:
+                                if runner is not None and hasattr(runner,'_log'):
+                                    runner._log('Campaign history UI error: '+repr(ex))
+                                self.notice.set('History panel error (Tests status still valid): '+str(ex)[:160])
                         t=dt.datetime.now().astimezone().strftime('%H:%M:%S')
                         self.notice.set(('Cloud-V verified at '+t+': processes, runs and latest Studio log checked.') if profile=='Cloud-V' else
                                         'EPCC status and Studio logs verified at '+t+'.')

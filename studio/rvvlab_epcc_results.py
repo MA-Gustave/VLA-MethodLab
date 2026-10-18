@@ -15,6 +15,13 @@ import tempfile
 import zipfile
 
 RUN_TYPES = {
+    'test103': dict(pattern=re.compile(r'^test103-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                    directory='test103-epcc-runs', status='status103.json',
+                    archive='test103_results.zip', test_id='test103-stage2-optimization',
+                    required=('status103.json','REPORT_103.md'),
+                    allowed=('status103.json','builds103.json','machine103.json','inputs103.json',
+                             'corpus_manifest103.json','results103.csv','summary103.json','REPORT_103.md',
+                             'studio103-build.log','studio103-cloudv.log','slurm103-exit.json','slurm103-runtime.log')),
     'test102': dict(pattern=re.compile(r'^test102-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
                     directory='test102-epcc-runs', status='status102.json',
                     archive='test102_results.zip', test_id='test102-escape-stage',

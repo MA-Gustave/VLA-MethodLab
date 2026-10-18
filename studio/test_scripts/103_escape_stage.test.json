@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "test103-stage2-optimization",
+  "title": "Test 103 \u2014 Stage 2 escape decoder optimizations (Cloud-V / EPCC)",
+  "description": "Experimental C++ Stage 2 decoder comparison: unchanged A2 16KiB vs SIMPLE_RUN vs NL4, with official simdjson 5.0.4 fallback; DOM + Stage1 + Stage2 on 18 public JSON and independently seeded density probes. Source overlay only; no promotion.",
+  "script": "103_escape_stage.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "max_seconds": 23400,
+    "epcc_node": "rvc02",
+    "new_run": true
+  }
+}

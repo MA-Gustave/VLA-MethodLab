@@ -61,7 +61,9 @@ class AdaptiveTest100(unittest.TestCase):
         meta=json.loads((HERE/'studio/test_scripts/100_adaptive_public.test.json').read_text())
         self.assertEqual(meta['id'],'test100-adaptive-public')
         self.assertEqual(meta['script'],'100_adaptive_public.py')
-        self.assertNotIn('requires_shared_corpus',meta)  # Runner safely synchronizes corpus itself
+        # Auto-sync was added after Test100: the launcher now validates and
+        # syncs the pinned corpus itself, so the old eager gate is absent.
+        self.assertNotIn('requires_shared_corpus',meta)
         self.assertTrue(meta['params']['new_run'])
 
     def test_round_uncertainty_unavailable_if_insufficient(self):
