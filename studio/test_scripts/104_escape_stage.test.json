@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "test104-independent-public-validation",
+  "title": "Test 104 \u2014 Independent JSONTestSuite + Stage2 validation on EPCC / Cloud-V",
+  "description": "External independently pinned JSONTestSuite (y_ valid, n_ reject, i_ unscored), pinned simdjson-data public JSON and explicitly separate synthetic controls. Four binaries including unchanged A2 and two experimental Stage2 optimizations; run on both RISC-V servers.",
+  "script": "104_escape_stage.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "max_seconds": 23400,
+    "epcc_node": "rvc02",
+    "new_run": true
+  }
+}

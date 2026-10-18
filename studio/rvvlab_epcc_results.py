@@ -15,6 +15,14 @@ import tempfile
 import zipfile
 
 RUN_TYPES = {
+    'test104': dict(pattern=re.compile(r'^test104-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                    directory='test104-epcc-runs', status='status104.json',
+                    archive='test104_results.zip', test_id='test104-independent-public-validation',
+                    required=('status104.json','REPORT_104.md'),
+                    allowed=('status104.json','builds104.json','machine104.json','inputs104.json',
+                             'corpus_manifest104.json','results104.csv','summary104.json','REPORT_104.md',
+                             'conformance104.csv','conformance104.json','conformance_manifest104.json',
+                             'studio104-build.log','studio104-cloudv.log','slurm104-exit.json','slurm104-runtime.log')),
     'test103': dict(pattern=re.compile(r'^test103-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
                     directory='test103-epcc-runs', status='status103.json',
                     archive='test103_results.zip', test_id='test103-stage2-optimization',

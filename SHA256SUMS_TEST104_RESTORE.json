@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "source_snapshot": "znapshot_VLA-MethodLab_10172214.zip",
+  "restores_missing_104": true,
+  "sha256": {
+    "README_TEST104_INDEPENDENT_VALIDATION.md": "c8db944c492f9377c60a64e0e92bb71160c1880025e69e2a0dd4fd07c31a00e8",
+    "README_TEST104_MANIFEST_RECOVERY.md": "701e24fe192b02bb26e23f1476abc5469ff84904182a71479198b1314145d297",
+    "studio/rvvlab_epcc_results.py": "33a9395689636842df400d515e97c75735c9a2c1aead762d2bb4f8ea48c8a969",
+    "studio/rvvlab_test104_download.py": "3b191899d9110489d40273878310e65fa9b2b654ee31805add77737cb9accf9c",
+    "studio/test_scripts/104_escape_stage.py": "1ae12ec2633e6eb415f5a9ec432fbf6fcc71cbf9e6125086232a9b86a1741420",
+    "studio/test_scripts/104_escape_stage.test.json": "821c8b00499d39d3fee6f5c00a9e0e7eda47e64ec9c0480eb451573bf505f730",
+    "studio/tests/test104_manifest_recovery.py": "6ae368e5c4a3f8d347b18049ab3c1d9bbdbdd87798e32c0e48cf7a7f7ba83c9e",
+    "studio/tests/test104_offline.py": "025b376a8afac17f2446fd4a47358bc122a65a2bc6ff3a5f72ffcd64849a1bfe",
+    "studio/tests/test_refonte_workspace.py": "b2320efc41f0a528ec274e2376677bb8185b60d828a113a3aee3c6ec32b1cc08",
+    "tools/test104_cloudv.sh": "d17f971c535a8510825c7b7d80b2956a764e022dd59f9d8a19c95574a6271c80",
+    "tools/test104_diagnostic.py": "216094a8c07563a3c9074cf05a32a820925c87fcd1e66a0c1561a2f8abc8ea12",
+    "tools/test104_epcc.sbatch": "9a04d3a06b7e8ff3be9d0f5b06fb37f253d6e69f17907a5a51c872b260e6b015",
+    "tools/test104_epcc_build.py": "32ed544ceccc6d61474dc7a86bd9481179f75cae66db3e2bb0517593e55de685",
+    "tools/test104_native.py": "72ce888bd0ad5dcb8a2960e5375912fb9181e6fe623ce7709505e45efb933791",
+    "tools/test104_split.cpp": "a2b023ee16006b2d64414ebcedc61f6b91eb0aad0d7db66143010d2d56f6c7ca",
+    "tools/test104_stage2_patch.py": "9f0e9333a60d789eb0097e84a75814701e4b4c9bb462dd627a1e972b24ba6a0c"
+  }
+}
