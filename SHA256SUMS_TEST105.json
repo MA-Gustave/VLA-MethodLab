@@ -1,0 +1,24 @@
+{
+  "design": "strict GCC+LLVM on each of EPCC and Cloud-V; eight variants per machine",
+  "experiment": "test105-cross-compiler-stage2",
+  "files": {
+    "README_TEST105_CROSS_COMPILER.md": "102c2662171a9d49917d07c4e3a9eb74c46fa513ee2a83c068929c972f5f1aa4",
+    "studio/rvvlab_epcc_results.py": "fdf827cd0ac65509b06e986cfff826ab208887496b27f4dd8a6a3d87b583da6c",
+    "studio/rvvlab_simple_tests.py": "3952169e63603ba5964e78e985cec6d37f600b3b98f0cd128056aa3c6cc00b49",
+    "studio/rvvlab_test105_download.py": "e26ecddc3901bdafdf4441aa3584f36b9a83eb6abdfbb2e747c900e3b9a580cd",
+    "studio/rvvlab_unified_campaigns.py": "0fea95e3b2b64c70961f2594178ff747b9986d4687f0e06cb0ddc56d26113f02",
+    "studio/test_scripts/105_compiler_matrix.py": "61376248b50b08eeabccd743a60db5fce4dfd63c7c662c2276949f893840aea6",
+    "studio/test_scripts/105_compiler_matrix.test.json": "a7246b1b186518f30e5cb14f87b0eb7c0b97abb59f3f8eca43e2a7981f5608ab",
+    "studio/tests/test105_offline.py": "f65949a06b01de30cc9f5b00fe8cdda2471bbc6858bc7c892443f3c891b99312",
+    "studio/tests/test_refonte_workspace.py": "c6a40ea39bb32fe3d05994fa83da4fd05f19dfb3541eab8a8348362099facec6",
+    "tools/test105_cloudv.sh": "b8fbfa5515a688647447f94ba3604791cd1c898bd2a23fbb453a8d7fae39fd1a",
+    "tools/test105_diagnostic.py": "599b94cf4db7c4ff3915181675cebd3f0a8812087368233443f111a33d846c54",
+    "tools/test105_epcc.sbatch": "a39b37731d695c9300281c723d2bdb0d34e9c19d86e40333a5f4a20f43aa562c",
+    "tools/test105_epcc_build.py": "d311502d9a39b6a02a98b8a946b71e8d572e18e3fbe3244d9880db083157192c",
+    "tools/test105_native.py": "f9f6f9ba911007d52712c67faad234d365adc767d954d2947925fe86befd6c00",
+    "tools/test105_split.cpp": "3cade6df46b1720fe22c6a263b64a9db5a70daa23d2cdddba0763e3a5b9f6f8f",
+    "tools/test105_stage2_patch.py": "651dfd25ee2a8ef34ec08a88e03e916d84087da581cf8ca2d0ef68e69ca7e2b1",
+    "tools/test96_epcc_build.py": "87112096ef6fc6f6369093a010ce541fedb5a88369137d0b140053022fae20b3"
+  },
+  "schema": 1
+}

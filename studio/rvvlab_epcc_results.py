@@ -15,6 +15,23 @@ import tempfile
 import zipfile
 
 RUN_TYPES = {
+    'test106': dict(pattern=re.compile(r'^test106-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                    directory='test106-epcc-runs', status='status106.json',
+                    archive='test106_results.zip', test_id='test106-vectorpath-release-validation',
+                    required=('status106.json','REPORT_106.md'),
+                    allowed=('status106.json','builds106.json','machine106.json','inputs106.json',
+                             'corpus_manifest106.json','results106.csv','summary106.json','public_gate106.json','REPORT_106.md',
+                             'conformance106.csv','conformance106.json','conformance_manifest106.json',
+                             'studio106-build.log','studio106-cloudv.log','slurm106-exit.json','slurm106-runtime.log')),
+    'test105': dict(pattern=re.compile(r'^test105-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
+                    directory='test105-epcc-runs', status='status105.json',
+                    archive='test105_results.zip', test_id='test105-cross-compiler-stage2',
+                    required=('status105.json','REPORT_105.md'),
+                    allowed=('status105.json','builds105.json','compilers105.json','machine105.json','inputs105.json',
+                             'corpus_manifest105.json','results105.csv','summary105.json','REPORT_105.md',
+                             'conformance105.csv','conformance105.json','conformance_manifest105.json',
+                             'probe105_gcc.log','probe105_llvm.log',
+                             'studio105-build.log','studio105-cloudv.log','slurm105-exit.json','slurm105-runtime.log')),
     'test104': dict(pattern=re.compile(r'^test104-\d{8}T\d{6}Z-[0-9a-f]{6}$'),
                     directory='test104-epcc-runs', status='status104.json',
                     archive='test104_results.zip', test_id='test104-independent-public-validation',

@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "target": "VLA-MethodLab DROP ROOT",
+  "delivery": "VectorPath A2 candidate side-by-side final validation Test106",
+  "historic_engine_mutated": false,
+  "vectorpath_candidate_is_shipping_approved": false,
+  "offline_test_count": 139,
+  "files": [
+    {
+      "path": "README_METHODLAB_VECTORPATH_RC_TEST106.md",
+      "bytes": 6920,
+      "sha256": "9fee9ca2e4629608caa24db9443b0bc32f5811cdd60feb9b54aa49e974fb97a8"
+    },
+    {
+      "path": "release_candidates/vectorpath_a2_rc_20261018/VECTORPATH_RC_VALIDATION.md",
+      "bytes": 4655,
+      "sha256": "c3f4c1a53a30c6f9ad8ea79ec40c9f95e6ef8592a22b9ea45142d746e0a7e0ca"
+    },
+    {
+      "path": "release_candidates/vectorpath_a2_rc_20261018/vectorpath_rc_sources.zip",
+      "bytes": 14733,
+      "sha256": "513dbf6ea2241d469ade18a354e18a77303d66ce9d6794fb8595ee59e01f0388"
+    },
+    {
+      "path": "studio/rvvlab_epcc_results.py",
+      "bytes": 15022,
+      "sha256": "68e79a648dc5a8c3c90758e524658dc499bca818a6f502a08abf844de841b69f"
+    },
+    {
+      "path": "studio/rvvlab_simple_tests.py",
+      "bytes": 53505,
+      "sha256": "b64c7503520bcc087f630a641ed273e1e434b5ee4872aba286e4cd9b538e77ef"
+    },
+    {
+      "path": "studio/rvvlab_test106_download.py",
+      "bytes": 5192,
+      "sha256": "060be5fe5d694bfe6ebfd247550a12585cff653c341e7a228120c89ce9c18461"
+    },
+    {
+      "path": "studio/rvvlab_unified_campaigns.py",
+      "bytes": 26551,
+      "sha256": "3e8531b6aae8694c58b604e1a239ee0fb941cefd6ccfab8c40dcf493e4bd10af"
+    },
+    {
+      "path": "studio/test_scripts/106_vectorpath_release.py",
+      "bytes": 16641,
+      "sha256": "7fad95701ff44fc134801a3c7811cbdfc469036ae803653bdedcd423d61055a3"
+    },
+    {
+      "path": "studio/test_scripts/106_vectorpath_release.test.json",
+      "bytes": 610,
+      "sha256": "0dbb53554df90fe402528e2d75ef402363aeb3d2d638e5612bd2607827c6fdd0"
+    },
+    {
+      "path": "studio/tests/test106_release_candidate.py",
+      "bytes": 4413,
+      "sha256": "d312e1f91633a4c13ce5825726d861183fffdad735999be716dbb3946415c060"
+    },
+    {
+      "path": "studio/tests/test_refonte_workspace.py",
+      "bytes": 3725,
+      "sha256": "5578dea79dffaaba1bab76034decbde3c5ec01456a56bb8e6e7a659fa69dbc09"
+    },
+    {
+      "path": "tools/test106_cloudv.sh",
+      "bytes": 1418,
+      "sha256": "d7ce1c750101fb0c18f0c27944a879ebc902de5882490d352beeaf9b1ba0c826"
+    },
+    {
+      "path": "tools/test106_diagnostic.py",
+      "bytes": 2262,
+      "sha256": "f19a6db5ba68303b8e60d92a9ae7a54159612334aeee03db36bd7c8855815adf"
+    },
+    {
+      "path": "tools/test106_epcc.sbatch",
+      "bytes": 1375,
+      "sha256": "346c34c2e8f630ef9368ec4cbb8e7abf35a3184b43c2aba658adf84c05978486"
+    },
+    {
+      "path": "tools/test106_epcc_build.py",
+      "bytes": 829,
+      "sha256": "aca13d108c5ef3d597447c1f0b92ededcce9a001ff2c4c2b0b1823828532f981"
+    },
+    {
+      "path": "tools/test106_native.py",
+      "bytes": 38792,
+      "sha256": "ef26a922276615f44f23c1e24b8b45a571247d65884d496bbddb113993e57e66"
+    },
+    {
+      "path": "tools/test106_split.cpp",
+      "bytes": 5720,
+      "sha256": "41357ac625b3872195fce3c1584664fe84033eec888eec3953a68cbeffc68265"
+    }
+  ]
+}

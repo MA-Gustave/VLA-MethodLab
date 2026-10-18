@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "test106-vectorpath-release-validation",
+  "title": "Test 106 \u2014 VectorPath A2 release candidate validation (EPCC / Cloud-V)",
+  "description": "Short final same-hardware A/B: original immutable A2 vs pinned VectorPath optimized RC stable and optional SIMPLE_RUN/NL4, with official 5.0.4 fallback for context. JSONTestSuite + pinned public inputs + separate synthetic controls. No mutation of Lab engine.",
+  "script": "106_vectorpath_release.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "max_seconds": 7200,
+    "epcc_node": "rvc02",
+    "new_run": true
+  }
+}

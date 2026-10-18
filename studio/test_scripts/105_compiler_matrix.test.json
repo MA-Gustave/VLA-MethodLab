@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "test105-cross-compiler-stage2",
+  "title": "Test 105 \u2014 GCC vs LLVM cross-compiler Stage 2 investigation",
+  "description": "Strict 2x2 hardware/compiler factorial check. Eight binaries per target: GCC/LLVM x official fallback/original A2/SIMPLE_RUN/NL4. Pinned public JSON and JSONTestSuite correctness + separate density probes. Full matrix preflight or diagnostic, never a partial speed claim.",
+  "script": "105_compiler_matrix.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "max_seconds": 23400,
+    "epcc_node": "rvc02",
+    "new_run": true
+  }
+}
