@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "test107-formal-release-qualification",
+  "title": "Test 107 — Formal release evidence gate (LOCAL, no remote campaign)",
+  "description": "Audit the TWO completed Test106 result archives, per-document public performance, 340 JSONTestSuite verdicts per target, matching RVV binaries and source provenance. CI remains separate; no run is scheduled remotely.",
+  "script": "107_release_qualification.py",
+  "enabled": true,
+  "manual_only": true,
+  "params": {
+    "cloudv_archive": "",
+    "epcc_archive": "",
+    "vectorpath_archive": "",
+    "ci_run_json": ""
+  }
+}

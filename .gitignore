@@ -42,3 +42,5 @@ __pycache__/
 
 # Test98 corpus cache, ZIPs are fetched locally only
 /engine/.cache/test98-corpus/
+
+ZmartZnap.pyw

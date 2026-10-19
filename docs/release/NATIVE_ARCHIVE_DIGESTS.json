@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "purpose": "Preserved original Test 101-106 native archive SHA-256 checksums",
+  "files": [
+    {
+      "path": "logs-reports/raw-native/test101/cloudv.zip",
+      "sha256": "75834c1c5d7e8d42564b5ec04b2fba1e115552e528e18accb80a8d32c22a17a9",
+      "bytes": 608119
+    },
+    {
+      "path": "logs-reports/raw-native/test101/results-archive.zip",
+      "sha256": "d16cac7da7b00767e813236ffc52c42c1931907bd3743b7edfeb48c7da6cda9d",
+      "bytes": 537700
+    },
+    {
+      "path": "logs-reports/raw-native/test102/cloudv.zip",
+      "sha256": "db209de3236c1875b2bff8f6cba63c733dc7f237703a564f7d949b465fd22c6a",
+      "bytes": 11450851
+    },
+    {
+      "path": "logs-reports/raw-native/test102/epcc.zip",
+      "sha256": "c354320b6a87ad47137135c35423b2d6e1c0ca4a7ae800234069ac0b8811b42e",
+      "bytes": 9703262
+    },
+    {
+      "path": "logs-reports/raw-native/test103/cloudv.zip",
+      "sha256": "f3277827eed4c7acbc206eec5e4b69eb3129831de8954a7a5b7ec427f95232af",
+      "bytes": 11852631
+    },
+    {
+      "path": "logs-reports/raw-native/test103/epcc.zip",
+      "sha256": "968db94fcd71a3c850aa1c916d1b247d4401434e6f0ca931f1e0857e390739f3",
+      "bytes": 10443820
+    },
+    {
+      "path": "logs-reports/raw-native/test104/cloudv.zip",
+      "sha256": "88ff2a9f51d23ef1e69f6de5a815bb4d7a4bd13b35e886b97c2d06abcba72642",
+      "bytes": 28421808
+    },
+    {
+      "path": "logs-reports/raw-native/test104/epcc.zip",
+      "sha256": "7a9e2992cf2d5318f70c0902b2d5e66bcb7f31c75e5bab81d51dba9e8454458d",
+      "bytes": 23709967
+    },
+    {
+      "path": "logs-reports/raw-native/test106/cloudv.zip",
+      "sha256": "cb0808f0fdc95d2cda99039af78abe8b91349c1d74832254c21df52ac2258168",
+      "bytes": 8642217
+    },
+    {
+      "path": "logs-reports/raw-native/test106/epcc.zip",
+      "sha256": "d670d27d0811c97dae1427921ed19e397046d01c15de830fa447a95d9bd0b25a",
+      "bytes": 7235222
+    }
+  ]
+}

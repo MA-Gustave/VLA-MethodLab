@@ -327,7 +327,8 @@ def run_trial(item,studio,result_root,emit,stop_event):
         with log_path.open('a',encoding='utf-8') as f:f.write(stamped+'\n')
         emit(stamped)
     ctx=TestContext(studio,out,logger,stop_event,item)
-    ctx.ensure_connected()
+    # Test107 performs only a local evidence audit. Do not require SSH for it.
+    if item['id']!='test107-formal-release-qualification':ctx.ensure_connected()
     logger(f'START {item["id"]} script SHA256 {item["script_sha"]}')
     if item.get('requires_shared_corpus'):
         # Optional, fail-closed preflight for ANY future trusted test manifest.

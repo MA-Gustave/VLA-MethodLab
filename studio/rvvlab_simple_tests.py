@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import datetime as dt
 import importlib.util
+import hashlib
+import shutil
+import zipfile
 import json
 import os
 from pathlib import Path
@@ -15,15 +18,15 @@ import re
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 
 from rvvlab_test_runner import SCRIPTS_DIR, TestContext, discover
 from rvvlab_elapsed import elapsed_display
 
-PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC'), '99': ('Cloud-V','EPCC'), '100': ('Cloud-V','EPCC'), '101': ('Cloud-V','EPCC'), '102': ('Cloud-V','EPCC'), '103': ('Cloud-V','EPCC'), '104': ('Cloud-V','EPCC'), '105': ('Cloud-V','EPCC'), '106': ('Cloud-V','EPCC')}
+PROFILES = {'94': ('Cloud-V', 'EPCC'), '95': ('Cloud-V',), '96': ('EPCC',), '97': ('Cloud-V', 'EPCC'), '98': ('Cloud-V','EPCC'), '99': ('Cloud-V','EPCC'), '100': ('Cloud-V','EPCC'), '101': ('Cloud-V','EPCC'), '102': ('Cloud-V','EPCC'), '103': ('Cloud-V','EPCC'), '104': ('Cloud-V','EPCC'), '105': ('Cloud-V','EPCC'), '106': ('Cloud-V','EPCC'), '107': ('Cloud-V','EPCC')}
 TEST_IDS = {'94': 'machine-compare-94-1h', '95': 'test95-cloudv-8h',
             '96': 'test96-epcc-8h', '97': 'test97-cloudv-8h',
-            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus', '99': 'test99-public-8h', '100': 'test100-adaptive-public', '101': 'test101-dispatch-validation', '102': 'test102-escape-stage', '103': 'test103-stage2-optimization','104':'test104-independent-public-validation','105':'test105-cross-compiler-stage2','106':'test106-vectorpath-release-validation'}
+            '97-epcc': 'test97-epcc-v5-3h', '98': 'test98-real-corpus', '99': 'test99-public-8h', '100': 'test100-adaptive-public', '101': 'test101-dispatch-validation', '102': 'test102-escape-stage', '103': 'test103-stage2-optimization','104':'test104-independent-public-validation','105':'test105-cross-compiler-stage2','106':'test106-vectorpath-release-validation','107':'test107-formal-release-qualification'}
 
 
 def test_id(number, profile):
@@ -243,6 +246,66 @@ def _label(row):
     }.get(row['state'], '◷ ' + row['state'])
 
 
+def _test107_runs(results_root):
+    """Discover only completed local audit artifacts; never infer remote runs."""
+    base=Path(results_root).expanduser()/'TestRunner'/TEST_IDS['107']
+    items=[]
+    if not base.is_dir():return items
+    for directory in sorted(base.iterdir(),reverse=True):
+        if not directory.is_dir():continue
+        failure=directory/'TEST107_FAILURE.json'
+        report=directory/'TEST107_RELEASE_AUDIT.json'
+        packet=directory/'test107_release_audit.zip'
+        if failure.is_file():
+            items.append({'id':directory.name,'path':str(directory),
+                'state':'failed','packet':False,'validated':False,'rows':0,
+                'engine':'FAIL','ship':'BLOCKED_INVALID_EVIDENCE','proof':'Local audit rejected inputs'})
+            continue
+        if report.is_file() and packet.is_file():
+            try:
+                obj=json.loads(report.read_text(encoding='utf8'))
+                if obj.get('test')!=107 or obj.get('engine_qualification') not in ('PASS','FAIL'):
+                    continue
+                with zipfile.ZipFile(packet) as z:
+                    if z.testzip() is not None or set(z.namelist()) != {'TEST107_RELEASE_AUDIT.md','TEST107_RELEASE_AUDIT.json'}:
+                        continue
+                items.append({'id':directory.name,'path':str(directory),
+                    'state':'completed','packet':True,'validated':True,
+                    'rows':obj.get('sum_rows',0),'engine':obj.get('engine_qualification'),
+                    'ship':obj.get('ship_authorization'),'proof':'Local Test107 evidence audit'})
+            except (OSError,ValueError,TypeError,zipfile.BadZipFile):continue
+    return items
+
+
+def _run_test107_audit(cloudv,epcc,vectorpath,results_root):
+    """Perform reproducible Test107 locally and write artifacts atomically enough for UI refresh."""
+    base=Path(results_root).expanduser()/'TestRunner'/TEST_IDS['107']
+    out=base/dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    if out.exists():raise RuntimeError('Audit folder already exists; wait and retry')
+    out.mkdir(parents=True,exist_ok=False)
+    tool=Path(__file__).resolve().parent.parent/'tools'/'test107_release_audit.py'
+    if not tool.is_file():raise RuntimeError('Test107 audit module not installed: '+str(tool))
+    spec=importlib.util.spec_from_file_location('rvvlab_test107_audit_direct',tool)
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    params={'cloudv_archive':str(cloudv),'epcc_archive':str(epcc),
+            'vectorpath_archive':str(vectorpath) if vectorpath else '',
+            'audit_script_sha256':hashlib.sha256(tool.read_bytes()).hexdigest()}
+    (out/'inputs.json').write_text(json.dumps(params,indent=2,sort_keys=True)+'\n',encoding='utf8')
+    try:
+        result=mod.audit_pair(cloudv,epcc,vectorpath,None)
+        md=mod.report(result)
+        (out/'TEST107_RELEASE_AUDIT.md').write_text(md,encoding='utf8')
+        (out/'TEST107_RELEASE_AUDIT.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n',encoding='utf8')
+        with zipfile.ZipFile(out/'test107_release_audit.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+            for filename in ('TEST107_RELEASE_AUDIT.md','TEST107_RELEASE_AUDIT.json'):
+                z.write(out/filename,arcname=filename)
+        return {'folder':str(out),'engine':result['engine_qualification'],
+                'ship':result['ship_authorization'],'rows':result['sum_rows']}
+    except Exception as ex:
+        (out/'TEST107_FAILURE.json').write_text(json.dumps({'error':repr(ex),'state':'EVIDENCE_INVALID'},indent=2)+'\n',encoding='utf8')
+        raise
+
+
 class SimpleTestsPanel:
     """Three actions: Run, verify server status, download verified ZIP."""
     def __init__(self, parent, studio):
@@ -375,6 +438,7 @@ class SimpleTestsPanel:
     def _render_workspace(self):
         """Presentation only. Never guess completion from an old local PASS."""
         number=self._number()
+        if number=='107':return
         if not number:return
         profile=self.profile
         descriptions={
@@ -456,6 +520,7 @@ class SimpleTestsPanel:
 
     def _update_elapsed(self):
         """Render duration locally; does not probe SSH or infer liveness."""
+        if self._number()=='107':return
         row=self._row()
         elapsed,source=elapsed_display(row)
         self.elapsed.set('Elapsed: '+elapsed+'  ·  '+source if row else 'Elapsed: —')
@@ -510,15 +575,111 @@ class SimpleTestsPanel:
         self.tree.delete(*self.tree.get_children())
         for number,allowed in PROFILES.items():
             if self.profile in allowed:
-                self.tree.insert('','end',iid=number,values=(number,self.profile,'Needs verification'))
+                self.tree.insert('','end',iid=number,values=(number,'LOCAL' if number=='107' else self.profile,
+                    'Ready — local audit (no SSH)' if number=='107' else 'Needs verification'))
         children=self.tree.get_children()
         if children:self.tree.selection_set(children[-1])  # 97 Cloud-V, 96 EPCC
         self.selection.set('')
         self._selected()
-        self.notice.set(self.profile+' — connect via SSH, then Refresh. Other machines are excluded.')
+        self.notice.set(self.profile+' — tests 94–106 use SSH. Test 107 runs LOCALLY without SSH.')
+        self._refresh_local107()
+
+    def _refresh_local107(self,select_newest=False):
+        rows=_test107_runs(self.studio.vars['results'].get())
+        self.runs['107']=rows
+        if select_newest:self.selection.set(rows[0]['id'] if rows else '')
+        if self.tree.exists('107'):
+            label=('✓ Local ENGINE PASS' if rows[0]['state']=='completed' else '✕ Local audit failed') if rows else 'Ready — local audit (no SSH)'
+            self.tree.set('107','state',label)
+            self.tree.item('107',tags=('ok',) if rows and rows[0]['state']=='completed' else ('fail',) if rows else ())
+        if self._number()=='107':self._selected()
+
+    def _selected_local107(self):
+        rows=self.runs.get('107',[])
+        values=[r['id'] for r in rows]
+        if tuple(self.run_choice['values'])!=tuple(values):self.run_choice['values']=values
+        if self.selection.get() not in values:self.selection.set(values[0] if values else '')
+        row=self._row()
+        self.test_descr.set('Test 107  /  LOCAL (Cloud-V + EPCC)\n'
+          'Formal release qualification. Audits two completed Test106 ZIP archives on this PC.\n'
+          'No SSH, Slurm, compilation, new measurements or remote download.')
+        self.status.set(('✓ ' if row['state']=='completed' else '✕ ')+'ENGINE '+row['engine']+' · SHIP '+row['ship'] if row else
+                        '○ Test 107 ready — choose two Test106 ZIP files')
+        self.details.set(('Local ZIP: '+row['path']+'  ·  '+str(row.get('rows',0))+' audited measurements.' if row else
+              'Click Run: select Cloud-V Test106 ZIP, then EPCC Test106 ZIP.\n'
+              'Optionally include the frozen VectorPath distribution ZIP for source verification.'))
+        self.elapsed.set('LOCAL AUDIT — no benchmark duration')
+        self.banner_subtitle.set('Local evidence audit only. GitHub CI / fuzzing remains a separate ship gate.')
+        tone=('ok_bg','ok') if row and row['state']=='completed' else ('bad_bg','bad') if row else ('light_blue','ink')
+        self.banner.configure(bg=self.colors[tone[0]])
+        self.banner_label.configure(bg=self.colors[tone[0]],fg=self.colors[tone[1]])
+        self.banner_caption.configure(bg=self.colors[tone[0]],fg=self.colors[tone[1]])
+        signature=('107',tuple((r['id'],r['state']) for r in rows))
+        if signature!=self._history_drawn:
+            self._history_drawn=signature
+            self.history_tree.delete(*self.history_tree.get_children())
+            for r in rows:
+                self.history_tree.insert('','end',iid=r['id'],values=(r['id'],'Local '+r['engine'],
+                    '—',str(r.get('rows',0)),'Ready' if r['packet'] else '—'),
+                    tags=('ok',) if r['state']=='completed' else ('fail',))
+        chosen=self.selection.get()
+        if chosen and self.history_tree.exists(chosen):self.history_tree.selection_set(chosen)
+        self.run_button.configure(text='▶  Run LOCAL audit',state='disabled' if self.busy else 'normal')
+        self.refresh_button.configure(state='normal')
+        self.download_button.configure(text='↓  Export ZIP',state='normal' if row and row['packet'] and not self.busy else 'disabled')
+        self.open_button.configure(state='normal' if row else 'disabled')
+
+    def _run_local107(self):
+        if self.busy:return
+        if not (SCRIPTS_DIR/'107_release_qualification.test.json').is_file():
+            messagebox.showerror('Test 107 missing','Reapply the Test107 DROP ROOT ZIP.');return
+        cloudv=filedialog.askopenfilename(title='Test 107 (1/3) — Select Cloud-V Test106 results ZIP',
+                 filetypes=[('ZIP results','*.zip')])
+        if not cloudv:return
+        epcc=filedialog.askopenfilename(title='Test 107 (2/3) — Select EPCC Test106 results ZIP',
+                 filetypes=[('ZIP results','*.zip')])
+        if not epcc:return
+        dist=None
+        if messagebox.askyesno('Test 107 — optional source verification',
+               'Include the frozen VectorPath-RVV DROP ROOT ZIP?\n\n'
+               'Yes = select it for SHA-256 source verification.\n'
+               'No = engine evidence audit only (distribution remains unverified).'):
+            dist=filedialog.askopenfilename(title='Test 107 (3/3) — VectorPath release ZIP',
+                  filetypes=[('ZIP release','*.zip')])
+            if not dist:return
+        if not messagebox.askyesno('Confirm LOCAL Test 107',
+                 'Audit existing Test106 results only?\n\nCloud-V: '+cloudv+
+                 '\nEPCC: '+epcc+'\n\nNo SSH, Slurm or benchmark will run.'):
+            return
+        self.busy=True;self._selected()
+        self.notice.set('Test 107 local audit running. Do not close Studio until completion.')
+        def work():
+            try:
+                result=_run_test107_audit(cloudv,epcc,dist,self.studio.vars['results'].get())
+                self.events.put(('local107',(result,None)))
+            except Exception as ex:self.events.put(('local107',(None,str(ex))))
+        threading.Thread(target=work,daemon=True).start()
+
+    def _export_local107(self):
+        row=self._row()
+        if not row or not row.get('packet'):return
+        source=Path(row['path'])/'test107_release_audit.zip'
+        if not source.is_file():return
+        target=filedialog.asksaveasfilename(title='Export Test 107 release audit ZIP',
+            initialfile='test107_release_audit.zip',defaultextension='.zip',
+            filetypes=[('ZIP archive','*.zip')])
+        if target:
+            if source.resolve()!=Path(target).resolve():shutil.copy2(source,target)
+            self.notice.set('Local Test107 audit ZIP exported to: '+str(target))
 
     def _selected(self):
         n=self._number()
+        if n=='107':
+            self._selected_local107()
+            return
+        self.run_button.configure(text='▶  Run')
+        self.download_button.configure(text='↓  Download')
+        self.open_button.configure(state='normal')
         rows=self.runs.get(n,[]) if n else []
         choices=[r['id'] for r in rows]
         previous=self.selection.get()
@@ -573,6 +734,10 @@ class SimpleTestsPanel:
         self._update_elapsed()
 
     def refresh(self):
+        if self._number()=='107':
+            self._refresh_local107()
+            self.notice.set('Test107 local audit status refreshed. No SSH request sent.')
+            return
         if self.poll_busy or self.busy:return
         if self.profile!=self.studio.active_profile:self.profile_changed()
         if not self.studio.ssh.connected():
@@ -586,7 +751,7 @@ class SimpleTestsPanel:
         def work():
             try:
                 data={num:_server_runs(self.studio.ssh,remote_name,num,profile)
-                      for num in PROFILES if profile in PROFILES[num]}
+                      for num in PROFILES if num!='107' and profile in PROFILES[num]}
                 processes=_remote_test97_processes(self.studio.ssh) if profile=='Cloud-V' else []
                 self.events.put(('status',(profile,data,processes,None)))
             except Exception as ex:self.events.put(('status',(profile,None,None,str(ex))))
@@ -600,6 +765,9 @@ class SimpleTestsPanel:
         """One click: verify remote state first, then ask launch confirmation."""
         number=self._number()
         if not number:return
+        if number=='107':
+            self._run_local107()
+            return
         if not self.studio.ssh.connected():
             messagebox.showwarning('SSH','Connect the selected machine before Run.');return
         if (self.busy or self.poll_busy or self.studio.test_runner.busy or
@@ -614,7 +782,7 @@ class SimpleTestsPanel:
             try:
                 # Checking ALL supported tests also catches overlapping 94–99.
                 data={n:_server_runs(self.studio.ssh,remote_name,n,profile)
-                      for n in PROFILES if profile in PROFILES[n]}
+                      for n in PROFILES if n!='107' and profile in PROFILES[n]}
                 processes=_remote_test97_processes(self.studio.ssh) if profile=='Cloud-V' else []
                 if processes:
                     raise RuntimeError('Processus Cloud-V Test97 encore actif : '+
@@ -665,6 +833,9 @@ class SimpleTestsPanel:
 
     def download(self):
         row=self._row();number=self._number()
+        if number=='107':
+            self._export_local107()
+            return
         if not row or not number or self.busy or not self.studio.ssh.connected():return
         if not (self.remote_checked and row['packet'] and ((row['state']=='completed' and row.get('validated')) or (number in ('100','101','102','103','104','105','106') and row['state'] in ('failed','stopped')))):
             messagebox.showinfo('Not finished yet','Click Refresh. Download will be enabled once completion is validated.');return
@@ -752,6 +923,13 @@ class SimpleTestsPanel:
     def open_results(self):
         number=self._number();row=self._row()
         if not number:return
+        if number=='107':
+            dest=Path(row['path']) if row else Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/TEST_IDS['107']
+            if not dest.is_dir():
+                messagebox.showinfo('Test107 results','No local audit results yet. Run Test107 first.');return
+            if os.name=='nt':os.startfile(str(dest))
+            else:messagebox.showinfo('Test107 local results',str(dest))
+            return
         dest=self._packet_dir(number,row['id']) if row else Path(self.studio.vars['results'].get()).expanduser()/'TestRunner'/test_id(number,self.profile)
         if not dest.is_dir():
             messagebox.showinfo('Results','No local download for this run.');return
@@ -763,7 +941,18 @@ class SimpleTestsPanel:
             while True:
                 try:kind,payload=self.events.get_nowait()
                 except queue.Empty:break
-                if kind=='status':
+                if kind=='local107':
+                    result,error=payload
+                    self.busy=False
+                    self._refresh_local107(select_newest=True)
+                    if error:
+                        self.notice.set('Test107 evidence audit FAILED: '+error[:350])
+                        messagebox.showerror('Test107 audit failed',error[:1000])
+                    else:
+                        self.notice.set('Test107 local audit completed: ENGINE '+result['engine']+'; SHIP '+result['ship'])
+                        messagebox.showinfo('Test107 completed',
+                            'ENGINE: '+result['engine']+'\nSHIP: '+result['ship']+'\n\n'+result['folder'])
+                elif kind=='status':
                     profile,data,processes,error=payload
                     self.poll_busy=False
                     if profile!=self.studio.active_profile:continue
@@ -781,6 +970,7 @@ class SimpleTestsPanel:
                                 if r['state']=='unconfirmed':
                                     r['state']='building';r['proof']='Confirmed remote /proc process'
                         for n in self.tree.get_children():
+                            if n=='107':continue  # Local audit is NOT a remote campaign.
                             rows=data.get(n,[]);row=rows[0] if rows else None
                             local=_local_attempt(self.studio.vars['results'].get(),n,profile)
                             if row:label=_label(row)

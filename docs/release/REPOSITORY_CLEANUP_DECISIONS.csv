@@ -1,0 +1,127 @@
+source,target,action,reason
+results.zip,EXCLUDED (separate optional backup),exclude,Transport bundle identical to files already in the full repository
+logs-reports.zip,EXCLUDED (separate optional backup),exclude,Transport bundle identical to files already in the full repository
+logs-reports/106-cloudv/,logs-reports/raw-native/test106/cloudv.zip,deduplicated,All 15 files byte-identical to content in 106-cloudv.zip
+logs-reports/102-cloudv.zip,logs-reports/raw-native/test102/cloudv.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/102epcc.zip,logs-reports/raw-native/test102/epcc.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/103-cloudv.zip,logs-reports/raw-native/test103/cloudv.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/103_epp.zip,logs-reports/raw-native/test103/epcc.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/104-cloudv.zip,logs-reports/raw-native/test104/cloudv.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/104_epcc.zip,logs-reports/raw-native/test104/epcc.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/106-cloudv.zip,logs-reports/raw-native/test106/cloudv.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/106-eppc.zip,logs-reports/raw-native/test106/epcc.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/test101-cloudv.zip,logs-reports/raw-native/test101/cloudv.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/test101_results.zip,logs-reports/raw-native/test101/results-archive.zip,move,Original native measurement ZIP; bytes unchanged
+logs-reports/TEST104_EPCC_CLOUDV_Official_Baseline_Performance_Analysis_EN.md,logs-reports/reports/cross-machine/TEST104_EPCC_CLOUDV_Official_Baseline_Performance_Analysis_EN.md,move,Cross-machine historical scientific report
+logs-reports/TEST102_Baseline_Simdjson_Gains_Analysis_EN.md,logs-reports/reports/cross-machine/TEST102_Baseline_Simdjson_Gains_Analysis_EN.md,move,Cross-machine historical scientific report
+logs-reports/TEST106_Public_18JSON_PerDocument_Results_EN.csv,results/releases/test106/TEST106_Public_18JSON_PerDocument_Results_EN.csv,move,Canonical Test106 release report/data
+logs-reports/TEST101_Official_Simdjson_Baseline_Analysis_EN.md,logs-reports/reports/cross-machine/TEST101_Official_Simdjson_Baseline_Analysis_EN.md,move,Cross-machine historical scientific report
+logs-reports/TEST103_EPCC_CLOUDV_Baseline_And_A2_Gains_EN.md,logs-reports/reports/cross-machine/TEST103_EPCC_CLOUDV_Baseline_And_A2_Gains_EN.md,move,Cross-machine historical scientific report
+logs-reports/TEST106_VectorPath_RVV_Final_Native_Performance_Report_EN.md,results/releases/test106/TEST106_VectorPath_RVV_Final_Native_Performance_Report_EN.md,move,Canonical Test106 release report/data
+logs-reports/TEST107_FORMAL_RELEASE_AUDIT_EN.md,results/releases/test107/TEST107_FORMAL_RELEASE_AUDIT_EN.md,move,Canonical Test107 release audit
+logs-reports/CloudV/RVV-VLA-Lab_Test90_Validation_FR.md,logs-reports/reports/CloudV/RVV-VLA-Lab_Test90_Validation_FR.md,move,"Original report, contents unchanged"
+logs-reports/CloudV/RVV-VLA-Lab_Test89_Analyse_Exploratoire_FR.md,logs-reports/reports/CloudV/RVV-VLA-Lab_Test89_Analyse_Exploratoire_FR.md,move,"Original report, contents unchanged"
+logs-reports/CloudV/RVV_Lab_Disk_Space_Anomaly_Report_2026-10-13.md,logs-reports/reports/CloudV/RVV_Lab_Disk_Space_Anomaly_Report_2026-10-13.md,move,"Original report, contents unchanged"
+logs-reports/CloudV/Test_92_Performance_Report_EN.md,logs-reports/reports/CloudV/Test_92_Performance_Report_EN.md,move,"Original report, contents unchanged"
+logs-reports/EPCC/TEST97_EPCC_SIMDJSON_V5_BENCHMARK.md,logs-reports/reports/EPCC/TEST97_EPCC_SIMDJSON_V5_BENCHMARK.md,move,"Original report, contents unchanged"
+SHA256SUMS_TEST106.json,docs/archive/historical-checksums/SHA256SUMS_TEST106.json,move,Historical manifest; not the current release checksum
+TEST100_EPCC_CLOUDV_PAR_DOCUMENT.csv,results/archive/test100/TEST100_EPCC_CLOUDV_PAR_DOCUMENT.csv,move,Historical scientific data
+Install-Test88.ps1,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-2-REPOS-DROP-ROOT.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-CENTRE-TOUS-TESTS.md,docs/reference/README-CENTRE-TOUS-TESTS.md,move,Useful corpus/Studio reference retained out of root
+README-FIX-EPCC-TEST94-CXX-FLAGS.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-CORRECTIF-TEST96-CHEMIN-MOTEUR.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_CORPUS_STANDARDISES_METHODLAB.md,docs/reference/README_CORPUS_STANDARDISES_METHODLAB.md,move,Useful corpus/Studio reference retained out of root
+README_TEST100_CORPUS_AUTOSYNC_FIX.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+INSTALL-TEST88.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-CONSOLIDATION-CENTRE-TESTS-EPCC.md,docs/archive/historical-campaigns/README-CONSOLIDATION-CENTRE-TESTS-EPCC.md,move,Historical campaign document preserved but removed from root
+LIRE-MOI-TEST94-1H.md,docs/archive/historical-campaigns/LIRE-MOI-TEST94-1H.md,move,Historical campaign document preserved but removed from root
+SHA256SUMS_TEST104_RESTORE.json,docs/archive/historical-checksums/SHA256SUMS_TEST104_RESTORE.json,move,Historical manifest; not the current release checksum
+README-TEST97-CLOUDV-8H.md,docs/archive/historical-campaigns/README-TEST97-CLOUDV-8H.md,move,Historical campaign document preserved but removed from root
+README_FIX_TEST100_CLOUDV_DOWNLOAD.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-LOCAL-CLOCK.md,docs/archive/historical-campaigns/README-LOCAL-CLOCK.md,move,Historical campaign document preserved but removed from root
+SHA256SUMS_CORPUS_STANDARDISES.txt,docs/archive/historical-checksums/SHA256SUMS_CORPUS_STANDARDISES.txt,move,Historical manifest; not the current release checksum
+README-FIX-EPCC-LLVM16-TEST94.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_CORRECTIF_JSONTESTSUITE_DIAGNOSTIC.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+SHA256SUMS_TEST100.json,docs/archive/historical-checksums/SHA256SUMS_TEST100.json,move,Historical manifest; not the current release checksum
+README_TEST100_ADAPTIVE.md,docs/archive/historical-campaigns/README_TEST100_ADAPTIVE.md,move,Historical campaign document preserved but removed from root
+INSTALL.txt,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+RUN_TEST_88.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-EXTERNAL-ENV.md,docs/reference/README-EXTERNAL-ENV.md,move,Useful corpus/Studio reference retained out of root
+README-EPCC-TEST-MODE.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_ENGLISH_UI_JSONTESTSUITE_FIX.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-DROP-ROOT-STATUT-UNIFIE-TESTS.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-DISK-SAFETY.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_TEST101_CROSS_MACHINE.md,docs/archive/historical-campaigns/README_TEST101_CROSS_MACHINE.md,move,Historical campaign document preserved but removed from root
+RUN_TEST_90.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+TEST94_SHA256SUMS.txt,docs/archive/historical-checksums/TEST94_SHA256SUMS.txt,move,Historical manifest; not the current release checksum
+README-MISSION-CONTROL-STUDIO.md,docs/reference/README-MISSION-CONTROL-STUDIO.md,move,Useful corpus/Studio reference retained out of root
+README-TEST96-EPCC-8H.md,docs/archive/historical-campaigns/README-TEST96-EPCC-8H.md,move,Historical campaign document preserved but removed from root
+README_DUAL_STUDIO_CLOUDV_EPCC.md,docs/reference/README_DUAL_STUDIO_CLOUDV_EPCC.md,move,Useful corpus/Studio reference retained out of root
+README_TEST104_MANIFEST_RECOVERY.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-STATUT-CLOUDV-97.md,docs/archive/historical-campaigns/README-STATUT-CLOUDV-97.md,move,Historical campaign document preserved but removed from root
+README-TEST90.md,docs/archive/historical-campaigns/README-TEST90.md,move,Historical campaign document preserved but removed from root
+SHA256SUMS_TEST99.txt,docs/archive/historical-checksums/SHA256SUMS_TEST99.txt,move,Historical manifest; not the current release checksum
+SHA256SUMS_TEST104_STATUS_HOTFIX.json,docs/archive/historical-checksums/SHA256SUMS_TEST104_STATUS_HOTFIX.json,move,Historical manifest; not the current release checksum
+SHA256SUMS_TEST101.json,docs/archive/historical-checksums/SHA256SUMS_TEST101.json,move,Historical manifest; not the current release checksum
+README_CORRECTIF_CORPUS_BOUTONS.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+SHA256SUMS-TEST98.txt,docs/archive/historical-checksums/SHA256SUMS-TEST98.txt,move,Historical manifest; not the current release checksum
+INSTALL-TEST89.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-DROP-ROOT-EPCC97.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+RUN_TEST_91_PILOT.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_FIX_JSONTESTSUITE_DOWNLOAD.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST88-RECOVERY.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-DUAL-MACHINE.md,docs/reference/README-DUAL-MACHINE.md,move,Useful corpus/Studio reference retained out of root
+README_TEST104_STUDIO_REFRESH_FIX.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST98-QUICKSTART.md,docs/archive/historical-campaigns/README-TEST98-QUICKSTART.md,move,Historical campaign document preserved but removed from root
+README-TEST94-1H.md,docs/archive/historical-campaigns/README-TEST94-1H.md,move,Historical campaign document preserved but removed from root
+README-STUDIO-DEUX-INSTANCES.md,docs/reference/README-STUDIO-DEUX-INSTANCES.md,move,Useful corpus/Studio reference retained out of root
+README_TEST105_CROSS_COMPILER.md,docs/release/protocols/README_TEST105_CROSS_COMPILER.md,move,Final validation and compiler methodology
+SHA256SUMS_TEST107.json,docs/archive/historical-checksums/SHA256SUMS_TEST107.json,move,Historical manifest; not the current release checksum
+PROJECT-SPLIT.md,docs/archive/old-project-manifests/PROJECT-SPLIT.md,move,Historical repo state no longer describes this integrated package
+README_TEST107_FORMAL_RELEASE_GATE.md,docs/release/protocols/README_TEST107_FORMAL_RELEASE_GATE.md,move,Final validation and compiler methodology
+README-TEST94-EPCC-LLVM16-LOOKUP.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+PULL_TEST_89.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST93.md,docs/archive/historical-campaigns/README-TEST93.md,move,Historical campaign document preserved but removed from root
+SHA256SUMS_TEST103.json,docs/archive/historical-checksums/SHA256SUMS_TEST103.json,move,Historical manifest; not the current release checksum
+SHA256SUMS_TEST102.json,docs/archive/historical-checksums/SHA256SUMS_TEST102.json,move,Historical manifest; not the current release checksum
+README_TEST103_OVERNIGHT.md,docs/archive/historical-campaigns/README_TEST103_OVERNIGHT.md,move,Historical campaign document preserved but removed from root
+README_TEST99_8H.md,docs/archive/historical-campaigns/README_TEST99_8H.md,move,Historical campaign document preserved but removed from root
+README_JOURNAL_CORPUS.md,docs/reference/README_JOURNAL_CORPUS.md,move,Useful corpus/Studio reference retained out of root
+SHA256SUMS_TEST105.json,docs/archive/historical-checksums/SHA256SUMS_TEST105.json,move,Historical manifest; not the current release checksum
+README_TEST104_INDEPENDENT_VALIDATION.md,docs/archive/historical-campaigns/README_TEST104_INDEPENDENT_VALIDATION.md,move,Historical campaign document preserved but removed from root
+README_ELAPSED_TIME_STUDIO.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+RUN_TEST_93_3H.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST89-SYNC-FIX.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-EPCC-TEST94-ETAT-PRECIS.md,docs/archive/historical-campaigns/README-EPCC-TEST94-ETAT-PRECIS.md,move,Historical campaign document preserved but removed from root
+README-MACHINE-PROBE.md,docs/reference/README-MACHINE-PROBE.md,move,Useful corpus/Studio reference retained out of root
+README-MAJ-STUDIO-10131514.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-EPCC-ENV-NO-PROMPTS.md,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+RUN_TEST_91_8H.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_REFONTE_STUDIO.md,docs/reference/README_REFONTE_STUDIO.md,move,Useful corpus/Studio reference retained out of root
+RUN_TEST_89.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST92.md,docs/archive/historical-campaigns/README-TEST92.md,move,Historical campaign document preserved but removed from root
+RUN_TEST95_DIRECT.sh,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README_CORPUS_JSON_PARTAGE.md,docs/reference/README_CORPUS_JSON_PARTAGE.md,move,Useful corpus/Studio reference retained out of root
+README-TEST97-EPCC-V5-COMPARAISON.md,docs/archive/historical-campaigns/README-TEST97-EPCC-V5-COMPARAISON.md,move,Historical campaign document preserved but removed from root
+README_METHODLAB_VECTORPATH_RC_TEST106.md,docs/release/protocols/README_METHODLAB_VECTORPATH_RC_TEST106.md,move,Final validation and compiler methodology
+README_TEST98_ADAPTE_METHODLAB.md,docs/archive/historical-campaigns/README_TEST98_ADAPTE_METHODLAB.md,move,Historical campaign document preserved but removed from root
+ANALYSE_TEST100_CLOUDV_EPCC_ET_PROTOCOLE_TEST101.md,docs/archive/historical-campaigns/ANALYSE_TEST100_CLOUDV_EPCC_ET_PROTOCOLE_TEST101.md,move,Historical campaign document preserved but removed from root
+README-TEST94-STATUS-CLOUDV-EPCC.md,docs/archive/historical-campaigns/README-TEST94-STATUS-CLOUDV-EPCC.md,move,Historical campaign document preserved but removed from root
+README_TEST102_OVERNIGHT.md,docs/archive/historical-campaigns/README_TEST102_OVERNIGHT.md,move,Historical campaign document preserved but removed from root
+README-GITHUB-2026.md,docs/archive/historical-campaigns/README-GITHUB-2026.md,move,Historical campaign document preserved but removed from root
+README-TEST95-CLOUDV-8H.md,docs/archive/historical-campaigns/README-TEST95-CLOUDV-8H.md,move,Historical campaign document preserved but removed from root
+RUN_TEST_92_8H.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST94-STUDIO.md,docs/archive/historical-campaigns/README-TEST94-STUDIO.md,move,Historical campaign document preserved but removed from root
+SHA256SUMS_CORPUS_JSON.txt,docs/archive/historical-checksums/SHA256SUMS_CORPUS_JSON.txt,move,Historical manifest; not the current release checksum
+ANALYSE_TEST99_ET_PLAN_TEST100.md,docs/archive/historical-campaigns/ANALYSE_TEST99_ET_PLAN_TEST100.md,move,Historical campaign document preserved but removed from root
+PULL_TEST_88.bat,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-STUDIO-SIMPLE.md,docs/reference/README-STUDIO-SIMPLE.md,move,Useful corpus/Studio reference retained out of root
+REPOSITORY_SPLIT.md,docs/archive/old-project-manifests/REPOSITORY_SPLIT.md,move,Historical repo state no longer describes this integrated package
+RELEASE_ALIGNMENT.json,docs/archive/old-project-manifests/RELEASE_ALIGNMENT.json,move,Historical repo state no longer describes this integrated package
+README_EPCC_LLVM16_PATCH.txt,EXCLUDED (separate optional backup),exclude,"Obsolete one-off launcher/overlay instructions, not part of clean installation"
+README-TEST91.md,docs/archive/historical-campaigns/README-TEST91.md,move,Historical campaign document preserved but removed from root
+README-TEST98-CORPUS-EPCC-CLOUDV.md,docs/reference/README-TEST98-CORPUS-EPCC-CLOUDV.md,move,Useful corpus/Studio reference retained out of root
+README.md,README.md,update,Replace obsolete overlay-based install instructions with full-clean-install release instructions
+—,CLEAN_INSTALL_RELEASE.md,add,Reinstallation and content verification guide
+—,tools/verify_release_tree.py,add,Read-only post-extraction integrity verifier

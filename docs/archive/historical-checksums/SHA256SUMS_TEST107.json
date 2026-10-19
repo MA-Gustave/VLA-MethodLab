@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "name": "Test107 UI visibility + offline audit fix",
+  "target": "VLA-MethodLab DROP ROOT",
+  "engine_unchanged": true,
+  "source_snapshot": "znapshot_VLA-MethodLab_10181547.zip",
+  "files": [
+    {
+      "path": "README_TEST107_FORMAL_RELEASE_GATE.md",
+      "bytes": 3641,
+      "sha256": "052f56578e728b972404d207f024eb152ef8c2e8f0a10e4b1d19139d15ee10b9"
+    },
+    {
+      "path": "studio/rvvlab_simple_tests.py",
+      "bytes": 65000,
+      "sha256": "52cb26918873a3ac478255a805cd9ca181007bb9c512ffefdd987ef1a1f0b633"
+    },
+    {
+      "path": "studio/rvvlab_test_runner.py",
+      "bytes": 49568,
+      "sha256": "ff20e0a83f96c1cecfdc23a8a601ba45506d55b97172f10d52913499b0095231"
+    },
+    {
+      "path": "studio/test_scripts/107_release_qualification.py",
+      "bytes": 3145,
+      "sha256": "74eeab2b48e347482ec68f219b61b50213034eea2d96430e3c7f01dba92fae24"
+    },
+    {
+      "path": "studio/test_scripts/107_release_qualification.test.json",
+      "bytes": 594,
+      "sha256": "ed9c156fbd7254d879177ef65a08e24e52178ad73db31dd16701493d61dd7737"
+    },
+    {
+      "path": "studio/tests/test107_release_gate.py",
+      "bytes": 1860,
+      "sha256": "818abeb6ee71b1dea480e473773e9d514a865363023c2a98a2fc22121c6ed943"
+    },
+    {
+      "path": "studio/tests/test107_visible_local_ui.py",
+      "bytes": 3082,
+      "sha256": "c52f6857b0d5991e0a2d50966681d83e41d2bb7178e771f872b02c0ebed156fc"
+    },
+    {
+      "path": "studio/tests/test_refonte_workspace.py",
+      "bytes": 3737,
+      "sha256": "670ff61c684c319bd9d010b301e0b79e2a8a7694d048c675e6927c0804bcf50b"
+    },
+    {
+      "path": "tools/test107_release_audit.py",
+      "bytes": 17185,
+      "sha256": "382d7b507381b55d095ad4e8dcb4248f9b1147468ec453abfb37d52c5e5853bd"
+    }
+  ]
+}
